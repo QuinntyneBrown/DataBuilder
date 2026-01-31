@@ -12,10 +12,14 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>db</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <PackageId>DataBuilder.Cli</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>DataBuilder</Authors>
+    <PackageId>QuinntyneBrown.DataBuilder.Cli</PackageId>
+    <Version>1.0.1</Version>
+    <Authors>Quinntyne Brown</Authors>
     <Description>CLI tool for scaffolding full-stack applications with C# N-Tier API and Angular frontend</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/QuinntyneBrown/DataBuilder</RepositoryUrl>
+    <PackageTags>cli;scaffolding;angular;csharp;couchbase;code-generator</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +33,10 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Templates\**\*.sbn" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
