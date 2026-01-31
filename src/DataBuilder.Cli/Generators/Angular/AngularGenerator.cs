@@ -97,6 +97,8 @@ public class AngularGenerator : IAngularGenerator
             await EnsureZoneJsPackageAsync(options, cancellationToken);
             // Ensure zone.js is imported in main.ts
             await EnsureZoneJsImportAsync(options, cancellationToken);
+            // Ensure vanilla-jsoneditor is in package.json for JSON editing
+            await EnsureJsonEditorPackageAsync(options, cancellationToken);
         }
     }
 
@@ -190,6 +192,40 @@ public class AngularGenerator : IAngularGenerator
         _logger.LogDebug("Added zone.js import to main.ts");
     }
 
+    private async Task EnsureJsonEditorPackageAsync(SolutionOptions options, CancellationToken cancellationToken)
+    {
+        var packageJsonPath = Path.Combine(options.UiProjectDirectory, "package.json");
+        if (!File.Exists(packageJsonPath))
+            return;
+
+        var content = await File.ReadAllTextAsync(packageJsonPath, cancellationToken);
+
+        // Check if vanilla-jsoneditor is already present
+        if (content.Contains("vanilla-jsoneditor"))
+            return;
+
+        _logger.LogInformation("Adding vanilla-jsoneditor to package.json...");
+
+        // Find the dependencies section and add vanilla-jsoneditor
+        // Look for "tslib" and add vanilla-jsoneditor after it
+        var tslibPattern = "\"tslib\"";
+        var tslibIndex = content.IndexOf(tslibPattern);
+        if (tslibIndex > 0)
+        {
+            // Find the end of the tslib line
+            var lineEnd = content.IndexOf('\n', tslibIndex);
+            if (lineEnd > 0)
+            {
+                // Insert vanilla-jsoneditor after tslib
+                var insertText = ",\n    \"vanilla-jsoneditor\": \"^1.0.0\"";
+                content = content.Insert(lineEnd, insertText);
+
+                await File.WriteAllTextAsync(packageJsonPath, content, cancellationToken);
+                _logger.LogDebug("Added vanilla-jsoneditor to package.json");
+            }
+        }
+    }
+
     private async Task CreateManualAngularStructureAsync(SolutionOptions options, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Creating Angular project structure manually...");
@@ -227,6 +263,7 @@ public class AngularGenerator : IAngularGenerator
     ""@angular/router"": ""^19.0.0"",
     ""rxjs"": ""~7.8.0"",
     ""tslib"": ""^2.3.0"",
+    ""vanilla-jsoneditor"": ""^1.0.0"",
     ""zone.js"": ""~0.15.0""
   }},
   ""devDependencies"": {{

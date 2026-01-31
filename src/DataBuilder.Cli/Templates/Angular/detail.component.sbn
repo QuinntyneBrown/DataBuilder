@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, CUSTOM_ELEMENTS_SCHEMA, AfterViewInit, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -11,12 +11,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
+import { JSONEditor, Mode } from 'vanilla-jsoneditor';
 import { {{ entity.name }} } from '../../../models/{{ entity.name_kebab_case }}.model';
 import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab_case }}.service';
 
 @Component({
   selector: 'app-{{ entity.name_kebab_case }}-detail',
   standalone: true,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [
     CommonModule,
     RouterModule,
@@ -99,19 +101,18 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
 {{~ for property in entity.non_id_properties ~}}
 {{~ if property.type_script_type == "boolean" ~}}
 {{~ else if property.is_object ~}}
-                <mat-form-field appearance="outline" class="form-field form-field--full">
-                  <mat-label>{{ property.name }} (JSON)</mat-label>
-                  <textarea matInput formControlName="{{ property.name_camel_case }}" rows="6" class="json-input"></textarea>
-                  <mat-hint>Enter valid JSON (e.g., {{ '{{' }} '{' {{ '}}' }} "key": "value" {{ '{{' }} '}' {{ '}}' }})</mat-hint>
+                <div class="json-editor-field form-field--full">
+                  <label class="json-editor-label">{{ property.name }}{{~ if property.is_required ~}} *{{~ end ~}}</label>
+                  <div id="{{ property.name_camel_case }}Editor" class="json-editor-container"></div>
 {{~ if property.is_required ~}}
                   @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
-                    <mat-error>{{ property.name }} is required</mat-error>
+                    <span class="json-editor-error">{{ property.name }} is required</span>
                   }
 {{~ end ~}}
                   @if (form.get('{{ property.name_camel_case }}')?.hasError('invalidJson')) {
-                    <mat-error>Invalid JSON format</mat-error>
+                    <span class="json-editor-error">Invalid JSON format</span>
                   }
-                </mat-form-field>
+                </div>
 {{~ else ~}}
                 <mat-form-field appearance="outline" class="form-field">
                   <mat-label>{{ property.name }}</mat-label>
@@ -257,9 +258,34 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
       grid-column: 1 / -1;
     }
 
-    .json-input {
-      font-family: 'Roboto Mono', monospace;
-      font-size: 13px;
+    .json-editor-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      grid-column: 1 / -1;
+    }
+
+    .json-editor-label {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.6);
+      font-weight: 500;
+    }
+
+    .json-editor-container {
+      height: 300px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .json-editor-container:focus-within {
+      border-color: #3f51b5;
+      border-width: 2px;
+    }
+
+    .json-editor-error {
+      color: #f44336;
+      font-size: 12px;
     }
 
     .monospace {
@@ -316,16 +342,20 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
     }
   `]
 })
-export class {{ entity.name }}DetailComponent implements OnInit {
+export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly {{ entity.name_camel_case }}Service = inject({{ entity.name }}Service);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly elementRef = inject(ElementRef);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly isNew = signal(true);
+
+  // JSON Editor instances
+  private jsonEditors: Map<string, JSONEditor> = new Map();
 
   form: FormGroup = this.fb.group({
 {{~ for property in entity.non_id_properties ~}}
@@ -333,9 +363,9 @@ export class {{ entity.name }}DetailComponent implements OnInit {
     {{ property.name_camel_case }}: [false],
 {{~ else if property.is_object ~}}
 {{~ if property.is_required ~}}
-    {{ property.name_camel_case }}: ['{}', [Validators.required, this.jsonValidator]],
+    {{ property.name_camel_case }}: [{}, Validators.required],
 {{~ else ~}}
-    {{ property.name_camel_case }}: ['{}', [this.jsonValidator]],
+    {{ property.name_camel_case }}: [{}],
 {{~ end ~}}
 {{~ else if property.is_required ~}}
     {{ property.name_camel_case }}: ['', Validators.required],
@@ -344,16 +374,6 @@ export class {{ entity.name }}DetailComponent implements OnInit {
 {{~ end ~}}
 {{~ end ~}}
   });
-
-  private jsonValidator(control: AbstractControl): ValidationErrors | null {
-    if (!control.value || control.value.trim() === '') return null;
-    try {
-      JSON.parse(control.value);
-      return null;
-    } catch {
-      return { invalidJson: true };
-    }
-  }
 
   itemId: string | null = null;
 
@@ -366,19 +386,69 @@ export class {{ entity.name }}DetailComponent implements OnInit {
     }
   }
 
+  ngAfterViewInit(): void {
+    // Initialize JSON editors for object properties
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.is_object ~}}
+    this.initJsonEditor('{{ property.name_camel_case }}');
+{{~ end ~}}
+{{~ end ~}}
+  }
+
+  private initJsonEditor(fieldName: string): void {
+    const container = this.elementRef.nativeElement.querySelector(`#${fieldName}Editor`);
+    if (!container) {
+      console.warn(`JSON editor container not found for field: ${fieldName}`);
+      return;
+    }
+
+    const editor = new JSONEditor({
+      target: container,
+      props: {
+        mode: Mode.text,
+        mainMenuBar: true,
+        navigationBar: false,
+        statusBar: true,
+        content: { json: this.form.get(fieldName)?.value || {} },
+        onChange: (updatedContent: any) => {
+          try {
+            const value = updatedContent.json !== undefined
+              ? updatedContent.json
+              : JSON.parse(updatedContent.text ?? '{}');
+            this.form.get(fieldName)?.setValue(value);
+            this.form.get(fieldName)?.setErrors(null);
+          } catch {
+            this.form.get(fieldName)?.setErrors({ invalidJson: true });
+          }
+        }
+      }
+    });
+    this.jsonEditors.set(fieldName, editor);
+  }
+
+  ngOnDestroy(): void {
+    // Clean up JSON editors
+    this.jsonEditors.forEach(editor => editor.destroy());
+    this.jsonEditors.clear();
+  }
+
   private loadItem(id: string): void {
     this.loading.set(true);
     this.{{ entity.name_camel_case }}Service.getById(id).subscribe({
       next: (item) => {
         this.form.patchValue({
 {{~ for property in entity.non_id_properties ~}}
-{{~ if property.is_object ~}}
-          {{ property.name_camel_case }}: JSON.stringify(item.{{ property.name_camel_case }} || {}, null, 2),
-{{~ else ~}}
+{{~ if !property.is_object ~}}
           {{ property.name_camel_case }}: item.{{ property.name_camel_case }},
 {{~ end ~}}
 {{~ end ~}}
         });
+        // Update JSON editors with loaded data
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.is_object ~}}
+        this.updateJsonEditor('{{ property.name_camel_case }}', item.{{ property.name_camel_case }} || {});
+{{~ end ~}}
+{{~ end ~}}
         this.loading.set(false);
       },
       error: () => {
@@ -388,6 +458,14 @@ export class {{ entity.name }}DetailComponent implements OnInit {
     });
   }
 
+  private updateJsonEditor(fieldName: string, value: any): void {
+    const editor = this.jsonEditors.get(fieldName);
+    if (editor) {
+      editor.set({ json: value });
+      this.form.get(fieldName)?.setValue(value);
+    }
+  }
+
   save(): void {
     if (this.form.invalid) return;
 
@@ -395,11 +473,6 @@ export class {{ entity.name }}DetailComponent implements OnInit {
     const formValue = this.form.value;
     const request = {
       ...formValue,
-{{~ for property in entity.non_id_properties ~}}
-{{~ if property.is_object ~}}
-      {{ property.name_camel_case }}: formValue.{{ property.name_camel_case }} ? JSON.parse(formValue.{{ property.name_camel_case }}) : {},
-{{~ end ~}}
-{{~ end ~}}
     };
 
     const operation = this.isNew()
