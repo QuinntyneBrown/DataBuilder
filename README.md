@@ -101,7 +101,9 @@ DataBuilder/
 │       └── Utilities/             # Naming conventions, type mapping
 ├── docs/                          # Documentation
 ├── playground/                    # Test projects and sample schemas
-├── eng/                           # Build scripts
+├── eng/
+│   └── scripts/
+│       └── install-tool.bat       # Build and install CLI tool locally
 └── artifacts/                     # Generated output examples
 ```
 
@@ -123,14 +125,13 @@ DataBuilder/
 ## Development
 
 ```bash
-# Build
-dotnet build
+# Build, pack, and install in one step
+eng\scripts\install-tool.bat
 
-# Pack as tool
-dotnet pack
-
-# Install local build
-dotnet tool install --global --add-source ./src/DataBuilder.Cli/nupkg DataBuilder.Cli
+# Or manually:
+dotnet build src/DataBuilder.Cli -c Release
+dotnet pack src/DataBuilder.Cli -c Release
+dotnet tool install -g DataBuilder.Cli --add-source src/DataBuilder.Cli/nupkg
 ```
 
 ## Documentation
