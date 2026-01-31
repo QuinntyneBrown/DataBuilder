@@ -1,0 +1,11 @@
+{
+  "idea": {
+    "title": "My brilliant idea",
+    "description": "A detailed description of the idea",
+    "category": "Innovation",
+    "status": "Draft",
+    "priority": 1,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "isPublic": false
+  }
+}

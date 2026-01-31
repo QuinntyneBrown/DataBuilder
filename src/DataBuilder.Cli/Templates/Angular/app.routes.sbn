@@ -1,0 +1,28 @@
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+{{~ for entity in entities ~}}
+  {
+    path: '{{ entity.name_plural_kebab_case }}',
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/{{ entity.name_kebab_case }}/{{ entity.name_kebab_case }}-list/{{ entity.name_kebab_case }}-list.component')
+          .then(m => m.{{ entity.name }}ListComponent)
+      },
+      {
+        path: 'new',
+        loadComponent: () => import('./features/{{ entity.name_kebab_case }}/{{ entity.name_kebab_case }}-detail/{{ entity.name_kebab_case }}-detail.component')
+          .then(m => m.{{ entity.name }}DetailComponent)
+      },
+      {
+        path: ':id',
+        loadComponent: () => import('./features/{{ entity.name_kebab_case }}/{{ entity.name_kebab_case }}-detail/{{ entity.name_kebab_case }}-detail.component')
+          .then(m => m.{{ entity.name }}DetailComponent)
+      }
+    ]
+  },
+{{~ end ~}}
+  { path: '', redirectTo: '{{ entities[0].name_plural_kebab_case }}', pathMatch: 'full' },
+  { path: '**', redirectTo: '{{ entities[0].name_plural_kebab_case }}' }
+];

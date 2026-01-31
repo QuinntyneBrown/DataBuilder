@@ -1,0 +1,160 @@
+using {{ core_namespace }}.Models;
+using Couchbase.Extensions.DependencyInjection;
+using Couchbase.KeyValue;
+using Microsoft.Extensions.Logging;
+using Gateway.Core;
+
+namespace {{ namespace }}.Data;
+
+/// <summary>
+/// Repository interface for {{ entity.display_name }} data access.
+/// </summary>
+public interface I{{ entity.name }}Repository
+{
+    Task<{{ entity.name }}?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<IEnumerable<{{ entity.name }}>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<PagedResult<{{ entity.name }}>> GetPageAsync(int pageIndex, int pageSize, CancellationToken cancellationToken = default);
+    Task<{{ entity.name }}> CreateAsync({{ entity.name }} entity, CancellationToken cancellationToken = default);
+    Task<{{ entity.name }}?> UpdateAsync({{ entity.name }} entity, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Repository implementation for {{ entity.display_name }} using Couchbase and Gateway.Core.
+/// </summary>
+public class {{ entity.name }}Repository : I{{ entity.name }}Repository
+{
+    private readonly IBucketProvider _bucketProvider;
+    private readonly ILogger<{{ entity.name }}Repository> _logger;
+    private const string BucketName = "{{ bucket_name }}";
+    private const string DocumentKeyPrefix = "{{ entity.name_camel_case }}::";
+
+    public {{ entity.name }}Repository(
+        IBucketProvider bucketProvider,
+        ILogger<{{ entity.name }}Repository> logger)
+    {
+        _bucketProvider = bucketProvider;
+        _logger = logger;
+    }
+
+    private async Task<ICouchbaseCollection> GetCollectionAsync()
+    {
+        var bucket = await _bucketProvider.GetBucketAsync(BucketName);
+        return await bucket.DefaultCollectionAsync();
+    }
+
+    public async Task<{{ entity.name }}?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var collection = await GetCollectionAsync();
+        var key = $"{DocumentKeyPrefix}{id}";
+
+        try
+        {
+            var result = await collection.GetAsync(key);
+            return result.ContentAs<{{ entity.name }}>();
+        }
+        catch (Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    public async Task<IEnumerable<{{ entity.name }}>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        var bucket = await _bucketProvider.GetBucketAsync(BucketName);
+        var cluster = bucket.Cluster;
+
+        var query = $"SELECT META().id, d.* FROM `{BucketName}` AS d WHERE META().id LIKE '{DocumentKeyPrefix}%'";
+        var result = await cluster.QueryAsync<{{ entity.name }}>(query);
+
+        var items = new List<{{ entity.name }}>();
+        await foreach (var item in result)
+        {
+            items.Add(item);
+        }
+
+        return items;
+    }
+
+    public async Task<PagedResult<{{ entity.name }}>> GetPageAsync(int pageIndex, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var bucket = await _bucketProvider.GetBucketAsync(BucketName);
+        var cluster = bucket.Cluster;
+
+        // Get total count
+        var countQuery = $"SELECT COUNT(*) as count FROM `{BucketName}` WHERE META().id LIKE '{DocumentKeyPrefix}%'";
+        var countResult = await cluster.QueryAsync<dynamic>(countQuery);
+        var countRow = await countResult.Rows.FirstOrDefaultAsync(cancellationToken);
+        var totalCount = countRow?.count ?? 0;
+
+        // Get paged data
+        var offset = pageIndex * pageSize;
+        var dataQuery = $"SELECT META().id, d.* FROM `{BucketName}` AS d WHERE META().id LIKE '{DocumentKeyPrefix}%' LIMIT {pageSize} OFFSET {offset}";
+        var dataResult = await cluster.QueryAsync<{{ entity.name }}>(dataQuery);
+
+        var items = new List<{{ entity.name }}>();
+        await foreach (var item in dataResult)
+        {
+            items.Add(item);
+        }
+
+        return new PagedResult<{{ entity.name }}>
+        {
+            Data = items,
+            PageIndex = pageIndex,
+            PageSize = pageSize,
+            TotalCount = (int)totalCount,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        };
+    }
+
+    public async Task<{{ entity.name }}> CreateAsync({{ entity.name }} entity, CancellationToken cancellationToken = default)
+    {
+        var collection = await GetCollectionAsync();
+
+        if (entity.{{ entity.name }}Id == Guid.Empty)
+        {
+            entity.{{ entity.name }}Id = Guid.NewGuid();
+        }
+
+        var key = $"{DocumentKeyPrefix}{entity.{{ entity.name }}Id}";
+        await collection.InsertAsync(key, entity);
+
+        _logger.LogInformation("Created {{ entity.name }} with ID: {Id}", entity.{{ entity.name }}Id);
+        return entity;
+    }
+
+    public async Task<{{ entity.name }}?> UpdateAsync({{ entity.name }} entity, CancellationToken cancellationToken = default)
+    {
+        var collection = await GetCollectionAsync();
+        var key = $"{DocumentKeyPrefix}{entity.{{ entity.name }}Id}";
+
+        try
+        {
+            await collection.ReplaceAsync(key, entity);
+            _logger.LogInformation("Updated {{ entity.name }} with ID: {Id}", entity.{{ entity.name }}Id);
+            return entity;
+        }
+        catch (Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var collection = await GetCollectionAsync();
+        var key = $"{DocumentKeyPrefix}{id}";
+
+        try
+        {
+            await collection.RemoveAsync(key);
+            _logger.LogInformation("Deleted {{ entity.name }} with ID: {Id}", id);
+            return true;
+        }
+        catch (Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException)
+        {
+            return false;
+        }
+    }
+}

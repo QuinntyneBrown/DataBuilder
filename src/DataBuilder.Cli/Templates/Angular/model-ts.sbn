@@ -1,0 +1,29 @@
+/**
+ * Represents a {{ entity.display_name }} model.
+ */
+export interface {{ entity.name }} {
+  /** The unique identifier. */
+  {{ entity.name_camel_case }}Id: string;
+{{~ for property in entity.properties ~}}
+  /** The {{ property.name_camel_case }}. */
+  {{ property.name_camel_case }}: {{ property.type_script_type }};
+{{~ end ~}}
+}
+
+/**
+ * Request model for creating a {{ entity.display_name }}.
+ */
+export interface Create{{ entity.name }}Request {
+{{~ for property in entity.properties ~}}
+  {{ property.name_camel_case }}: {{ property.type_script_type }};
+{{~ end ~}}
+}
+
+/**
+ * Request model for updating a {{ entity.display_name }}.
+ */
+export interface Update{{ entity.name }}Request {
+{{~ for property in entity.properties ~}}
+  {{ property.name_camel_case }}: {{ property.type_script_type }};
+{{~ end ~}}
+}

@@ -1,0 +1,50 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { {{ entity.name }}, Create{{ entity.name }}Request, Update{{ entity.name }}Request } from '../models/{{ entity.name_kebab_case }}.model';
+
+/**
+ * Service for {{ entity.display_name }} CRUD operations.
+ */
+@Injectable({
+  providedIn: 'root'
+})
+export class {{ entity.name }}Service {
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = 'http://localhost:{{ api_port }}/api/{{ entity.name_plural_kebab_case }}';
+
+  /**
+   * Gets all {{ entity.display_name_plural | string.downcase }}.
+   */
+  getAll(): Observable<{{ entity.name }}[]> {
+    return this.http.get<{{ entity.name }}[]>(this.baseUrl);
+  }
+
+  /**
+   * Gets a {{ entity.display_name | string.downcase }} by ID.
+   */
+  getById(id: string): Observable<{{ entity.name }}> {
+    return this.http.get<{{ entity.name }}>(`${this.baseUrl}/${id}`);
+  }
+
+  /**
+   * Creates a new {{ entity.display_name | string.downcase }}.
+   */
+  create(request: Create{{ entity.name }}Request): Observable<{{ entity.name }}> {
+    return this.http.post<{{ entity.name }}>(this.baseUrl, request);
+  }
+
+  /**
+   * Updates an existing {{ entity.display_name | string.downcase }}.
+   */
+  update(id: string, request: Update{{ entity.name }}Request): Observable<{{ entity.name }}> {
+    return this.http.put<{{ entity.name }}>(`${this.baseUrl}/${id}`, request);
+  }
+
+  /**
+   * Deletes a {{ entity.display_name | string.downcase }}.
+   */
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+}

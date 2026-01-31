@@ -1,0 +1,40 @@
+using {{ infrastructure_namespace }};
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "{{ solution_name }} API", Version = "v1" });
+});
+
+// Add infrastructure services (repositories, Couchbase)
+builder.Services.Add{{ solution_name }}Infrastructure(builder.Configuration);
+
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:{{ angular_port }}")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "{{ solution_name }} API v1"));
+}
+
+app.UseCors();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();

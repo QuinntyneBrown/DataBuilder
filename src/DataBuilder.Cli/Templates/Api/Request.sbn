@@ -1,0 +1,41 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace {{ namespace }}.Services;
+
+/// <summary>
+/// Request model for creating a {{ entity.display_name }}.
+/// </summary>
+public class Create{{ entity.name }}Request
+{
+{{~ for property in entity.properties ~}}
+{{~ if property.is_required ~}}
+    [Required]
+{{~ end ~}}
+{{~ if property.c_sharp_type == "string" ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = string.Empty;
+{{~ else if property.is_collection ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
+{{~ else ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; }
+{{~ end ~}}
+{{~ end ~}}
+}
+
+/// <summary>
+/// Request model for updating a {{ entity.display_name }}.
+/// </summary>
+public class Update{{ entity.name }}Request
+{
+{{~ for property in entity.properties ~}}
+{{~ if property.is_required ~}}
+    [Required]
+{{~ end ~}}
+{{~ if property.c_sharp_type == "string" ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = string.Empty;
+{{~ else if property.is_collection ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
+{{~ else ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; }
+{{~ end ~}}
+{{~ end ~}}
+}

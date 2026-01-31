@@ -1,0 +1,30 @@
+using {{ namespace }}.Data;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Couchbase.Extensions.DependencyInjection;
+
+namespace {{ namespace }};
+
+/// <summary>
+/// Extension methods for registering infrastructure services.
+/// </summary>
+public static class ServiceCollectionExtensions
+{
+    /// <summary>
+    /// Adds infrastructure services to the service collection.
+    /// </summary>
+    public static IServiceCollection Add{{ solution_name }}Infrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Configure Couchbase
+        services.AddCouchbase(configuration.GetSection("Couchbase"));
+
+        // Register repositories
+{{~ for entity in entities ~}}
+        services.AddScoped<I{{ entity.name }}Repository, {{ entity.name }}Repository>();
+{{~ end ~}}
+
+        return services;
+    }
+}

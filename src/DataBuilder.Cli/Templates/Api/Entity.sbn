@@ -1,0 +1,25 @@
+namespace {{ namespace }}.Models;
+
+/// <summary>
+/// Represents a {{ entity.display_name }} entity.
+/// </summary>
+public class {{ entity.name }}
+{
+    /// <summary>
+    /// Gets or sets the unique identifier.
+    /// </summary>
+    public Guid {{ entity.name }}Id { get; set; } = Guid.NewGuid();
+{{~ for property in entity.properties ~}}
+
+    /// <summary>
+    /// Gets or sets the {{ property.name_camel_case }}.
+    /// </summary>
+{{~ if property.c_sharp_type == "string" ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = string.Empty;
+{{~ else if property.is_collection ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
+{{~ else ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; }
+{{~ end ~}}
+{{~ end ~}}
+}

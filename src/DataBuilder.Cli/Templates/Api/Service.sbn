@@ -1,0 +1,135 @@
+using {{ namespace }}.Core;
+using Couchbase.Extensions.DependencyInjection;
+using Couchbase.KeyValue;
+
+namespace {{ namespace }}.Services;
+
+/// <summary>
+/// Service interface for {{ entity.display_name }} operations.
+/// </summary>
+public interface I{{ entity.name }}Service
+{
+    Task<IEnumerable<{{ entity.name }}>> GetAllAsync();
+    Task<{{ entity.name }}?> GetByIdAsync(Guid id);
+    Task<{{ entity.name }}> CreateAsync(Create{{ entity.name }}Request request);
+    Task<{{ entity.name }}?> UpdateAsync(Guid id, Update{{ entity.name }}Request request);
+    Task<bool> DeleteAsync(Guid id);
+}
+
+/// <summary>
+/// Service implementation for {{ entity.display_name }} operations using Couchbase.
+/// </summary>
+public class {{ entity.name }}Service : I{{ entity.name }}Service
+{
+    private readonly IBucketProvider _bucketProvider;
+    private readonly ILogger<{{ entity.name }}Service> _logger;
+    private const string CollectionName = "{{ entity.name_camel_case }}s";
+
+    public {{ entity.name }}Service(
+        IBucketProvider bucketProvider,
+        ILogger<{{ entity.name }}Service> logger)
+    {
+        _bucketProvider = bucketProvider;
+        _logger = logger;
+    }
+
+    private async Task<ICouchbaseCollection> GetCollectionAsync()
+    {
+        var bucket = await _bucketProvider.GetBucketAsync("{{ bucket_name }}");
+        return await bucket.DefaultCollectionAsync();
+    }
+
+    public async Task<IEnumerable<{{ entity.name }}>> GetAllAsync()
+    {
+        var collection = await GetCollectionAsync();
+        var bucket = await _bucketProvider.GetBucketAsync("{{ bucket_name }}");
+        var cluster = bucket.Cluster;
+
+        var query = $"SELECT META().id, {{ entity.name_camel_case }}.* FROM `{{ bucket_name }}` AS {{ entity.name_camel_case }} WHERE META().id LIKE '{{ entity.name_camel_case }}::%'";
+        var result = await cluster.QueryAsync<{{ entity.name }}>(query);
+
+        var items = new List<{{ entity.name }}>();
+        await foreach (var item in result)
+        {
+            items.Add(item);
+        }
+
+        return items;
+    }
+
+    public async Task<{{ entity.name }}?> GetByIdAsync(Guid id)
+    {
+        var collection = await GetCollectionAsync();
+        var key = $"{{ entity.name_camel_case }}::{id}";
+
+        try
+        {
+            var result = await collection.GetAsync(key);
+            return result.ContentAs<{{ entity.name }}>();
+        }
+        catch (Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    public async Task<{{ entity.name }}> CreateAsync(Create{{ entity.name }}Request request)
+    {
+        var collection = await GetCollectionAsync();
+
+        var item = new {{ entity.name }}
+        {
+            {{ entity.name }}Id = Guid.NewGuid(),
+{{~ for property in entity.properties ~}}
+            {{ property.name }} = request.{{ property.name }},
+{{~ end ~}}
+        };
+
+        var key = $"{{ entity.name_camel_case }}::{item.{{ entity.name }}Id}";
+        await collection.InsertAsync(key, item);
+
+        _logger.LogInformation("Created {{ entity.name }} with ID: {Id}", item.{{ entity.name }}Id);
+        return item;
+    }
+
+    public async Task<{{ entity.name }}?> UpdateAsync(Guid id, Update{{ entity.name }}Request request)
+    {
+        var collection = await GetCollectionAsync();
+        var key = $"{{ entity.name_camel_case }}::{id}";
+
+        try
+        {
+            var existing = await collection.GetAsync(key);
+            var item = existing.ContentAs<{{ entity.name }}>()!;
+
+{{~ for property in entity.properties ~}}
+            item.{{ property.name }} = request.{{ property.name }};
+{{~ end ~}}
+
+            await collection.ReplaceAsync(key, item);
+            _logger.LogInformation("Updated {{ entity.name }} with ID: {Id}", id);
+            return item;
+        }
+        catch (Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    public async Task<bool> DeleteAsync(Guid id)
+    {
+        var collection = await GetCollectionAsync();
+        var key = $"{{ entity.name_camel_case }}::{id}";
+
+        try
+        {
+            await collection.RemoveAsync(key);
+            _logger.LogInformation("Deleted {{ entity.name }} with ID: {Id}", id);
+            return true;
+        }
+        catch (Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException)
+        {
+            return false;
+        }
+    }
+}
