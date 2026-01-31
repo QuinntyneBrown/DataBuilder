@@ -9,6 +9,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDividerModule } from '@angular/material/divider';
 import { {{ entity.name }} } from '../../../models/{{ entity.name_kebab_case }}.model';
 import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab_case }}.service';
 
@@ -25,75 +27,308 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
     MatIconModule,
     MatCardModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatCheckboxModule,
+    MatDividerModule
   ],
   template: `
-    <div class="container">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>{{ '{{' }} isNew() ? 'Create' : 'Edit' {{ '}}' }} {{ entity.display_name }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @if (loading()) {
-            <div class="loading">
-              <mat-spinner diameter="40"></mat-spinner>
+    <div class="page-container">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb">
+        <a routerLink="../">{{ entity.display_name_plural }}</a>
+        <mat-icon class="breadcrumb__separator">chevron_right</mat-icon>
+        <span>{{ '{{' }} isNew() ? 'New {{ entity.display_name }}' : '{{ entity.display_name }} Details' {{ '}}' }}</span>
+      </nav>
+
+      @if (loading()) {
+        <div class="loading">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+      } @else {
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="page-header__info">
+            <h1 class="page-title">
+              {{ '{{' }} isNew() ? 'Create {{ entity.display_name }}' : 'Edit {{ entity.display_name }}' {{ '}}' }}
+            </h1>
+            <p class="page-subtitle">
+              {{ '{{' }} isNew() ? 'Create a new {{ entity.display_name | string.downcase }}' : 'Update {{ entity.display_name | string.downcase }} details' {{ '}}' }}
+            </p>
+          </div>
+          <div class="action-buttons">
+            <button mat-stroked-button routerLink="../">
+              <mat-icon>arrow_back</mat-icon>
+              Cancel
+            </button>
+            @if (!isNew()) {
+              <button mat-stroked-button color="warn" (click)="delete()">
+                <mat-icon>delete</mat-icon>
+                Delete
+              </button>
+            }
+            <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid || saving()">
+              @if (saving()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                <mat-icon>save</mat-icon>
+                {{ '{{' }} isNew() ? 'Create' : 'Save Changes' {{ '}}' }}
+              }
+            </button>
+          </div>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="save()">
+          <!-- Basic Information Card -->
+          <mat-card class="form-card">
+            <div class="card-header">
+              <h2 class="card-title">Basic Information</h2>
+              <p class="card-subtitle">Core details for this {{ entity.display_name | string.downcase }}</p>
             </div>
-          } @else {
-            <form [formGroup]="form" (ngSubmit)="save()">
+            <mat-divider></mat-divider>
+            <div class="card-content">
+              @if (!isNew()) {
+                <div class="form-row">
+                  <div class="form-field">
+                    <label class="form-label">{{ entity.id_property_name }}</label>
+                    <div class="readonly-value monospace">{{ '{{' }} itemId {{ '}}' }}</div>
+                  </div>
+                </div>
+              }
+
+              <div class="form-row">
 {{~ for property in entity.non_id_properties ~}}
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>{{ property.name }}</mat-label>
-{{~ if property.type_script_type == "number" ~}}
-                <input matInput type="number" formControlName="{{ property.name_camel_case }}">
-{{~ else if property.type_script_type == "boolean" ~}}
-                <input matInput type="checkbox" formControlName="{{ property.name_camel_case }}">
+{{~ if property.type_script_type == "boolean" ~}}
 {{~ else ~}}
-                <input matInput formControlName="{{ property.name_camel_case }}">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>{{ property.name }}</mat-label>
+{{~ if property.type_script_type == "number" ~}}
+                  <input matInput type="number" formControlName="{{ property.name_camel_case }}">
+{{~ else ~}}
+                  <input matInput formControlName="{{ property.name_camel_case }}">
 {{~ end ~}}
 {{~ if property.is_required ~}}
-                @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
-                  <mat-error>{{ property.name }} is required</mat-error>
-                }
-{{~ end ~}}
-              </mat-form-field>
-{{~ end ~}}
-
-              <div class="actions">
-                <button mat-button type="button" routerLink="../">Cancel</button>
-                <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || saving()">
-                  @if (saving()) {
-                    <mat-spinner diameter="20"></mat-spinner>
-                  } @else {
-                    {{ '{{' }} isNew() ? 'Create' : 'Save' {{ '}}' }}
+                  @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
+                    <mat-error>{{ property.name }} is required</mat-error>
                   }
-                </button>
+{{~ end ~}}
+                </mat-form-field>
+{{~ end ~}}
+{{~ end ~}}
               </div>
-            </form>
-          }
-        </mat-card-content>
-      </mat-card>
+            </div>
+          </mat-card>
+
+{{~ has_boolean_properties = false ~}}
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.type_script_type == "boolean" ~}}
+{{~ has_boolean_properties = true ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ if has_boolean_properties ~}}
+          <!-- Settings Card -->
+          <mat-card class="form-card">
+            <div class="card-header">
+              <h2 class="card-title">Settings</h2>
+              <p class="card-subtitle">Configure {{ entity.display_name | string.downcase }} options</p>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="card-content">
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.type_script_type == "boolean" ~}}
+              <div class="toggle-field">
+                <div class="toggle-label">
+                  <div class="toggle-label__title">{{ property.name }}</div>
+                  <div class="toggle-label__description">Enable or disable {{ property.name | string.downcase }}</div>
+                </div>
+                <mat-checkbox formControlName="{{ property.name_camel_case }}" color="primary"></mat-checkbox>
+              </div>
+{{~ end ~}}
+{{~ end ~}}
+            </div>
+          </mat-card>
+{{~ end ~}}
+        </form>
+      }
     </div>
   `,
   styles: [`
-    .container {
-      padding: 24px;
-      max-width: 600px;
+    .page-container {
+      padding: 32px;
+      max-width: 900px;
       margin: 0 auto;
     }
-    .full-width {
+
+    /* Breadcrumb */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .breadcrumb a {
+      color: var(--mat-primary);
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+      text-decoration: underline;
+    }
+
+    .breadcrumb__separator {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .breadcrumb span {
+      color: rgba(255, 255, 255, 0.87);
+    }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .page-header__info {
+      flex: 1;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 400;
+      margin: 0 0 4px 0;
+      color: rgba(255, 255, 255, 0.87);
+    }
+
+    .page-subtitle {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Form Card */
+    .form-card {
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 24px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 500;
+      margin: 0 0 4px 0;
+      color: rgba(255, 255, 255, 0.87);
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+    }
+
+    .card-content {
+      padding: 24px;
+    }
+
+    /* Form Layout */
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .form-field {
       width: 100%;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+    }
+
+    .readonly-value {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 16px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+
+    .monospace {
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    /* Toggle Field */
+    .toggle-field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
       margin-bottom: 16px;
     }
+
+    .toggle-field:last-child {
+      margin-bottom: 0;
+    }
+
+    .toggle-label {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toggle-label__title {
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: rgba(255, 255, 255, 0.87);
+    }
+
+    .toggle-label__description {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Loading */
     .loading {
       display: flex;
       justify-content: center;
-      padding: 48px;
+      padding: 64px;
     }
-    .actions {
-      display: flex;
-      gap: 16px;
-      justify-content: flex-end;
-      margin-top: 24px;
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .page-header {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .action-buttons {
+        width: 100%;
+        justify-content: flex-end;
+      }
     }
   `]
 })
@@ -111,14 +346,22 @@ export class {{ entity.name }}DetailComponent implements OnInit {
   form: FormGroup = this.fb.group({
 {{~ for property in entity.non_id_properties ~}}
 {{~ if property.is_required ~}}
+{{~ if property.type_script_type == "boolean" ~}}
+    {{ property.name_camel_case }}: [false],
+{{~ else ~}}
     {{ property.name_camel_case }}: ['', Validators.required],
+{{~ end ~}}
+{{~ else ~}}
+{{~ if property.type_script_type == "boolean" ~}}
+    {{ property.name_camel_case }}: [false],
 {{~ else ~}}
     {{ property.name_camel_case }}: [''],
 {{~ end ~}}
 {{~ end ~}}
+{{~ end ~}}
   });
 
-  private itemId: string | null = null;
+  itemId: string | null = null;
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -160,7 +403,7 @@ export class {{ entity.name }}DetailComponent implements OnInit {
     operation.subscribe({
       next: () => {
         this.snackBar.open(
-          `{{ entity.display_name }} ${this.isNew() ? 'created' : 'updated'}`,
+          `{{ entity.display_name }} ${this.isNew() ? 'created' : 'updated'} successfully`,
           'Close',
           { duration: 3000 }
         );
@@ -175,5 +418,19 @@ export class {{ entity.name }}DetailComponent implements OnInit {
         this.saving.set(false);
       }
     });
+  }
+
+  delete(): void {
+    if (confirm('Are you sure you want to delete this {{ entity.display_name | string.downcase }}? This action cannot be undone.')) {
+      this.{{ entity.name_camel_case }}Service.delete(this.itemId!).subscribe({
+        next: () => {
+          this.snackBar.open('{{ entity.display_name }} deleted successfully', 'Close', { duration: 3000 });
+          this.router.navigate(['../'], { relativeTo: this.route });
+        },
+        error: () => {
+          this.snackBar.open('Failed to delete {{ entity.display_name | string.downcase }}', 'Close', { duration: 5000 });
+        }
+      });
+    }
   }
 }

@@ -82,9 +82,12 @@ class Program
 
     static async Task<int> RunDbToolAsync(string solutionName, string outputDirectory, string entitiesFile)
     {
+        // Use the local build of the db tool
+        var dbToolPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", "src", "DataBuilder.Cli", "bin", "Debug", "net9.0", "db.exe"));
+
         var startInfo = new ProcessStartInfo
         {
-            FileName = "db",
+            FileName = dbToolPath,
             Arguments = $"solution-create --name {solutionName} --directory \"{outputDirectory}\" --json-file \"{entitiesFile}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,

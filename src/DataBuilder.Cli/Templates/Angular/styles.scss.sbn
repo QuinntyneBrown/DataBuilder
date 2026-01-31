@@ -1,11 +1,11 @@
 @use '@angular/material' as mat;
 
-// Material Design 3 Dark Theme
+// Material Design 3 Dark Theme with Admin UI colors
 $dark-theme: mat.define-theme((
   color: (
     theme-type: dark,
-    primary: mat.$violet-palette,
-    tertiary: mat.$cyan-palette,
+    primary: mat.$blue-palette,
+    tertiary: mat.$orange-palette,
   ),
 ));
 
@@ -14,15 +14,81 @@ html {
   @include mat.color-variants-backwards-compatibility($dark-theme);
 }
 
+// CSS Variables from Admin UI Guide
+:root {
+  // Primary Colors (Blue)
+  --primary-500: #2196f3;
+  --primary-600: #1e88e5;
+  --primary-700: #1976d2;
+
+  // Accent Colors (Orange)
+  --accent-500: #ff9800;
+  --accent-600: #fb8c00;
+  --accent-700: #f57c00;
+
+  // Warn/Error Colors (Red)
+  --warn-500: #f44336;
+  --warn-600: #e53935;
+  --warn-700: #d32f2f;
+
+  // Surface Colors (Dark Theme)
+  --surface-background: #121212;
+  --surface-card: #1e1e1e;
+  --surface-elevated: #2d2d2d;
+  --surface-dialog: #2d2d2d;
+  --surface-divider: rgba(255, 255, 255, 0.12);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --surface-selected: rgba(33, 150, 243, 0.16);
+
+  // Text Colors
+  --text-primary: rgba(255, 255, 255, 0.87);
+  --text-secondary: rgba(255, 255, 255, 0.60);
+  --text-disabled: rgba(255, 255, 255, 0.38);
+  --text-hint: rgba(255, 255, 255, 0.38);
+
+  // Status Colors
+  --status-success: #4caf50;
+  --status-warning: #ff9800;
+  --status-error: #f44336;
+  --status-info: #2196f3;
+
+  // Spacing (8px base unit)
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  // Border Radius
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-chip: 16px;
+  --radius-full: 50%;
+
+  // Elevation (Box Shadows)
+  --elevation-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  --elevation-2: 0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12);
+  --elevation-4: 0 10px 20px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.10);
+
+  // Transitions
+  --transition-fast: 150ms ease;
+  --transition-standard: 300ms ease;
+}
+
 html, body {
   height: 100%;
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: 'Roboto', 'Helvetica Neue', sans-serif;
 }
 
 body {
-  background-color: var(--mat-app-background-color);
-  color: var(--mat-app-text-color);
+  background-color: var(--surface-background);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 // Custom scrollbar for dark theme
@@ -32,16 +98,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 // Navigation styles
@@ -55,6 +121,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
+  background-color: var(--surface-card) !important;
 }
 
 .content {
@@ -63,17 +130,32 @@ body {
 }
 
 // Card enhancements
-mat-card {
-  background: rgba(255, 255, 255, 0.05);
+mat-card, .mat-mdc-card {
+  background-color: var(--surface-card) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--elevation-1) !important;
 }
 
 // Table enhancements
 .mat-mdc-table {
-  background: transparent;
+  background: transparent !important;
+}
+
+.mat-mdc-header-cell {
+  background-color: var(--surface-elevated) !important;
+  color: var(--text-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
 }
 
 .mat-mdc-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background-color: var(--surface-hover) !important;
+}
+
+.mat-mdc-cell {
+  border-bottom-color: var(--surface-divider) !important;
 }
 
 // Form field enhancements
@@ -81,7 +163,83 @@ mat-card {
   width: 100%;
 }
 
+.mat-mdc-form-field-outline {
+  color: var(--surface-divider) !important;
+}
+
 // Button enhancements
-.mat-mdc-fab.mat-primary {
-  --mdc-fab-container-color: var(--mat-primary);
+.mat-mdc-button, .mat-mdc-raised-button, .mat-mdc-flat-button, .mat-mdc-stroked-button {
+  border-radius: var(--radius-sm) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+}
+
+.mat-mdc-flat-button.mat-primary {
+  background-color: var(--primary-500) !important;
+}
+
+.mat-mdc-flat-button.mat-primary:hover {
+  background-color: var(--primary-700) !important;
+}
+
+// Snackbar styling
+.mat-mdc-snack-bar-container {
+  background-color: var(--surface-elevated) !important;
+  color: var(--text-primary) !important;
+}
+
+// Dialog styling
+.mat-mdc-dialog-container {
+  background-color: var(--surface-dialog) !important;
+}
+
+// Menu styling
+.mat-mdc-menu-panel {
+  background-color: var(--surface-card) !important;
+}
+
+.mat-mdc-menu-item:hover {
+  background-color: var(--surface-hover) !important;
+}
+
+// Paginator styling
+.mat-mdc-paginator {
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+}
+
+// Chip/Badge styles
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-chip);
+  font-size: 12px;
+  font-weight: 500;
+  gap: var(--spacing-xs);
+}
+
+.chip--success, .chip--active {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: var(--status-success);
+}
+
+.chip--error, .chip--inactive {
+  background-color: rgba(244, 67, 54, 0.2);
+  color: var(--status-error);
+}
+
+.chip--warning, .chip--locked {
+  background-color: rgba(255, 152, 0, 0.2);
+  color: var(--status-warning);
+}
+
+.chip--info {
+  background-color: rgba(33, 150, 243, 0.2);
+  color: var(--status-info);
+}
+
+// Monospace font for IDs and codes
+.monospace {
+  font-family: 'Roboto Mono', monospace;
 }

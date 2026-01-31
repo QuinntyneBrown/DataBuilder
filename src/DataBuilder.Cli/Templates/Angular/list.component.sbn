@@ -1,12 +1,19 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
 import { {{ entity.name }} } from '../../../models/{{ entity.name_kebab_case }}.model';
 import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab_case }}.service';
 
@@ -16,79 +23,269 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
   imports: [
     CommonModule,
     RouterModule,
+    FormsModule,
     MatTableModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatTooltipModule,
+    MatMenuModule
   ],
   template: `
-    <div class="container">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>{{ entity.display_name_plural }}</mat-card-title>
-          <span class="spacer"></span>
-          <button mat-fab extended color="primary" routerLink="new">
-            <mat-icon>add</mat-icon>
-            Add {{ entity.display_name }}
-          </button>
-        </mat-card-header>
-        <mat-card-content>
-          @if (loading()) {
-            <div class="loading">
-              <mat-spinner diameter="40"></mat-spinner>
-            </div>
-          } @else {
-            <table mat-table [dataSource]="items()" class="mat-elevation-z0">
-{{~ for property in entity.properties ~}}
-              <ng-container matColumnDef="{{ property.name_camel_case }}">
-                <th mat-header-cell *matHeaderCellDef>{{ property.name }}</th>
-                <td mat-cell *matCellDef="let item">{{ '{{' }} item.{{ property.name_camel_case }} {{ '}}' }}</td>
-              </ng-container>
+    <div class="page-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-header__info">
+          <h1 class="page-title">{{ entity.display_name_plural }}</h1>
+          <p class="page-subtitle">Manage {{ entity.display_name_plural | string.downcase }} and their details</p>
+        </div>
+        <button mat-flat-button color="primary" routerLink="new" class="add-button">
+          <mat-icon>add</mat-icon>
+          Add {{ entity.display_name }}
+        </button>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card__value">{{ '{{' }} items().length {{ '}}' }}</div>
+          <div class="stat-card__label">Total {{ entity.display_name_plural }}</div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput placeholder="Search {{ entity.display_name_plural | string.downcase }}..." [(ngModel)]="searchTerm" (input)="applyFilter()">
+        </mat-form-field>
+      </div>
+
+      <!-- Data Table Card -->
+      <mat-card class="table-card">
+        @if (loading()) {
+          <div class="loading">
+            <mat-spinner diameter="40"></mat-spinner>
+          </div>
+        } @else {
+          <table mat-table [dataSource]="filteredItems()" class="data-table">
+{{~ for property in entity.list_display_properties ~}}
+            <ng-container matColumnDef="{{ property.name_camel_case }}">
+              <th mat-header-cell *matHeaderCellDef>{{ property.name }}</th>
+{{~ if property.is_id ~}}
+              <td mat-cell *matCellDef="let item" class="cell-id">
+                <span class="monospace">{{ '{{' }} item.{{ property.name_camel_case }} | slice:0:8 {{ '}}' }}...</span>
+              </td>
+{{~ else ~}}
+              <td mat-cell *matCellDef="let item">{{ '{{' }} item.{{ property.name_camel_case }} {{ '}}' }}</td>
+{{~ end ~}}
+            </ng-container>
 {{~ end ~}}
 
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef>Actions</th>
-                <td mat-cell *matCellDef="let item">
-                  <button mat-icon-button color="primary" [routerLink]="[item.{{ entity.id_property_name_camel_case }}]">
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let item">
+                <div class="actions-cell">
+                  <button mat-icon-button color="primary" [routerLink]="[item.{{ entity.id_property_name_camel_case }}]" matTooltip="Edit">
                     <mat-icon>edit</mat-icon>
                   </button>
-                  <button mat-icon-button color="warn" (click)="delete(item)">
-                    <mat-icon>delete</mat-icon>
+                  <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="More actions">
+                    <mat-icon>more_vert</mat-icon>
                   </button>
-                </td>
-              </ng-container>
+                  <mat-menu #menu="matMenu">
+                    <button mat-menu-item [routerLink]="[item.{{ entity.id_property_name_camel_case }}]">
+                      <mat-icon>visibility</mat-icon>
+                      <span>View Details</span>
+                    </button>
+                    <button mat-menu-item (click)="delete(item)" class="delete-action">
+                      <mat-icon color="warn">delete</mat-icon>
+                      <span>Delete</span>
+                    </button>
+                  </mat-menu>
+                </div>
+              </td>
+            </ng-container>
 
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-            </table>
-          }
-        </mat-card-content>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row"></tr>
+
+            <!-- No data row -->
+            <tr class="mat-row no-data-row" *matNoDataRow>
+              <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+                @if (searchTerm) {
+                  No {{ entity.display_name_plural | string.downcase }} found matching "{{ '{{' }} searchTerm {{ '}}' }}"
+                } @else {
+                  No {{ entity.display_name_plural | string.downcase }} found. Click "Add {{ entity.display_name }}" to create one.
+                }
+              </td>
+            </tr>
+          </table>
+
+          <!-- Pagination -->
+          <div class="pagination">
+            <div class="pagination__info">
+              {{ '{{' }} filteredItems().length {{ '}}' }} {{ entity.display_name_plural | string.downcase }}
+            </div>
+            <mat-paginator
+              [length]="filteredItems().length"
+              [pageSize]="pageSize"
+              [pageSizeOptions]="[5, 10, 25, 50]"
+              (page)="onPageChange($event)"
+              showFirstLastButtons>
+            </mat-paginator>
+          </div>
+        }
       </mat-card>
     </div>
   `,
   styles: [`
-    .container {
-      padding: 24px;
-      max-width: 1200px;
+    .page-container {
+      padding: 32px;
+      max-width: 1400px;
       margin: 0 auto;
     }
-    mat-card-header {
+
+    /* Page Header */
+    .page-header {
       display: flex;
       align-items: center;
-      margin-bottom: 16px;
+      justify-content: space-between;
+      margin-bottom: 32px;
     }
-    .spacer {
+
+    .page-header__info {
       flex: 1;
     }
-    table {
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 400;
+      margin: 0 0 4px 0;
+      color: rgba(255, 255, 255, 0.87);
+    }
+
+    .page-subtitle {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+    }
+
+    .add-button {
+      height: 40px;
+      padding: 0 24px;
+      font-weight: 500;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 24px;
+    }
+
+    .stat-card__value {
+      font-size: 32px;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.87);
+      margin-bottom: 4px;
+    }
+
+    .stat-card__label {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 16px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+
+    .search-field {
+      flex: 1;
+      max-width: 400px;
+    }
+
+    .search-field ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+
+    /* Table Card */
+    .table-card {
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .data-table {
       width: 100%;
     }
+
+    .table-row:hover {
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .cell-id {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .monospace {
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 4px;
+    }
+
+    .no-data-row td {
+      text-align: center;
+      padding: 48px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .pagination__info {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Loading */
     .loading {
       display: flex;
       justify-content: center;
-      padding: 48px;
+      padding: 64px;
+    }
+
+    /* Delete action in menu */
+    .delete-action {
+      color: #f44336;
     }
   `]
 })
@@ -97,8 +294,12 @@ export class {{ entity.name }}ListComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
 
   readonly items = signal<{{ entity.name }}[]>([]);
+  readonly filteredItems = signal<{{ entity.name }}[]>([]);
   readonly loading = signal(true);
-  readonly displayedColumns = [{{ for property in entity.properties }}'{{ property.name_camel_case }}', {{ end }}'actions'];
+  readonly displayedColumns = [{{ for property in entity.list_display_properties }}'{{ property.name_camel_case }}', {{ end }}'actions'];
+
+  searchTerm = '';
+  pageSize = 10;
 
   ngOnInit(): void {
     this.loadItems();
@@ -109,6 +310,7 @@ export class {{ entity.name }}ListComponent implements OnInit {
     this.{{ entity.name_camel_case }}Service.getAll().subscribe({
       next: (items) => {
         this.items.set(items);
+        this.filteredItems.set(items);
         this.loading.set(false);
       },
       error: (error) => {
@@ -118,11 +320,30 @@ export class {{ entity.name }}ListComponent implements OnInit {
     });
   }
 
+  applyFilter(): void {
+    const term = this.searchTerm.toLowerCase().trim();
+    if (!term) {
+      this.filteredItems.set(this.items());
+      return;
+    }
+
+    const filtered = this.items().filter(item => {
+      return Object.values(item).some(value =>
+        value?.toString().toLowerCase().includes(term)
+      );
+    });
+    this.filteredItems.set(filtered);
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageSize = event.pageSize;
+  }
+
   delete(item: {{ entity.name }}): void {
     if (confirm('Are you sure you want to delete this {{ entity.display_name | string.downcase }}?')) {
       this.{{ entity.name_camel_case }}Service.delete(item.{{ entity.id_property_name_camel_case }}).subscribe({
         next: () => {
-          this.snackBar.open('{{ entity.display_name }} deleted', 'Close', { duration: 3000 });
+          this.snackBar.open('{{ entity.display_name }} deleted successfully', 'Close', { duration: 3000 });
           this.loadItems();
         },
         error: () => {

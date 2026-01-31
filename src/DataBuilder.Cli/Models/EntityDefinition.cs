@@ -71,4 +71,36 @@ public class EntityDefinition
     /// Non-ID properties (for create/update requests that don't include the ID).
     /// </summary>
     public List<PropertyDefinition> NonIdProperties => Properties.Where(p => !p.IsId).ToList();
+
+    /// <summary>
+    /// Properties suitable for list display (max 5 columns).
+    /// Only includes: id, version, versionNumber, name, description (if they exist).
+    /// </summary>
+    public List<PropertyDefinition> ListDisplayProperties
+    {
+        get
+        {
+            var allowedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "id", "version", "versionnumber", "name", "description"
+            };
+
+            return Properties
+                .Where(p => allowedNames.Contains(p.Name))
+                .Take(5)
+                .ToList();
+        }
+    }
+
+    /// <summary>
+    /// Whether the entity has a name property for display.
+    /// </summary>
+    public bool HasNameProperty => Properties.Any(p =>
+        p.Name.Equals("Name", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Whether the entity has a description property for display.
+    /// </summary>
+    public bool HasDescriptionProperty => Properties.Any(p =>
+        p.Name.Equals("Description", StringComparison.OrdinalIgnoreCase));
 }
