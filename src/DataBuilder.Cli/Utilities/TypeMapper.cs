@@ -18,7 +18,7 @@ public static class TypeMapper
             JsonValueKind.Number => InferNumberType(element),
             JsonValueKind.True or JsonValueKind.False => "bool",
             JsonValueKind.Array => InferArrayType(element),
-            JsonValueKind.Object => "object",
+            JsonValueKind.Object => "Dictionary<string, object>",
             JsonValueKind.Null => "string?",
             _ => "object"
         };
@@ -35,7 +35,7 @@ public static class TypeMapper
             JsonValueKind.Number => "number",
             JsonValueKind.True or JsonValueKind.False => "boolean",
             JsonValueKind.Array => InferTypeScriptArrayType(element),
-            JsonValueKind.Object => "object",
+            JsonValueKind.Object => "Record<string, any>",
             JsonValueKind.Null => "string | null",
             _ => "any"
         };
@@ -64,6 +64,7 @@ public static class TypeMapper
             "TimeOnly" => "string",
             "Guid" => "string",
             "object" => "any",
+            "Dictionary<string, object>" => "Record<string, any>",
             _ when baseType.StartsWith("List<") => ExtractListType(baseType) + "[]",
             _ when baseType.EndsWith("[]") => CSharpToTypeScript(baseType[..^2]) + "[]",
             _ => "any"
