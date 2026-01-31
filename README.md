@@ -279,6 +279,7 @@ The project uses GitHub Actions for continuous integration and deployment:
 ## Documentation
 
 - [Admin UI Implementation Guide](docs/ADMIN-UI-IMPLEMENTATION-GUIDE.md) - Material Design 3 dark theme patterns for generated UIs
+- [Contributing Guide](docs/CONTRIBUTING.md) - How to contribute to DataBuilder
 
 ## License
 

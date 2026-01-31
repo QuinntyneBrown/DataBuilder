@@ -206,19 +206,19 @@ public class AngularGenerator : IAngularGenerator
 
         _logger.LogInformation("Adding vanilla-jsoneditor to package.json...");
 
-        // Find the dependencies section and add vanilla-jsoneditor
-        // Look for "tslib" and add vanilla-jsoneditor after it
-        var tslibPattern = "\"tslib\"";
-        var tslibIndex = content.IndexOf(tslibPattern);
-        if (tslibIndex > 0)
+        // Find the dependencies section and add vanilla-jsoneditor before zone.js (which should be last)
+        // If zone.js exists, insert before it; otherwise insert before devDependencies
+        var zoneJsPattern = "\"zone.js\"";
+        var zoneJsIndex = content.IndexOf(zoneJsPattern);
+        if (zoneJsIndex > 0)
         {
-            // Find the end of the tslib line
-            var lineEnd = content.IndexOf('\n', tslibIndex);
-            if (lineEnd > 0)
+            // Find the start of the zone.js line (go back to find the whitespace)
+            var lineStart = content.LastIndexOf('\n', zoneJsIndex);
+            if (lineStart > 0)
             {
-                // Insert vanilla-jsoneditor after tslib
-                var insertText = ",\n    \"vanilla-jsoneditor\": \"^1.0.0\"";
-                content = content.Insert(lineEnd, insertText);
+                // Insert vanilla-jsoneditor before zone.js
+                var insertText = "\"vanilla-jsoneditor\": \"^1.0.0\",\n    ";
+                content = content.Insert(lineStart + 1 + 4, insertText); // +1 for newline, +4 for indentation
 
                 await File.WriteAllTextAsync(packageJsonPath, content, cancellationToken);
                 _logger.LogDebug("Added vanilla-jsoneditor to package.json");

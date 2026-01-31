@@ -11,7 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
-import { JSONEditor, Mode } from 'vanilla-jsoneditor';
+import { createJSONEditor, Mode, type JsonEditor } from 'vanilla-jsoneditor';
 import { {{ entity.name }} } from '../../../models/{{ entity.name_kebab_case }}.model';
 import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab_case }}.service';
 
@@ -72,8 +72,10 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
               @if (saving()) {
                 <mat-spinner diameter="20"></mat-spinner>
               } @else {
-                <mat-icon>save</mat-icon>
-                {{ '{{' }} isNew() ? 'Create' : 'Save Changes' {{ '}}' }}
+                <ng-container>
+                  <mat-icon>save</mat-icon>
+                  {{ '{{' }} isNew() ? 'Create' : 'Save Changes' {{ '}}' }}
+                </ng-container>
               }
             </button>
           </div>
@@ -355,7 +357,7 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
   readonly isNew = signal(true);
 
   // JSON Editor instances
-  private jsonEditors: Map<string, JSONEditor> = new Map();
+  private jsonEditors: Map<string, JsonEditor> = new Map();
 
   form: FormGroup = this.fb.group({
 {{~ for property in entity.non_id_properties ~}}
@@ -402,7 +404,7 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
       return;
     }
 
-    const editor = new JSONEditor({
+    const editor = createJSONEditor({
       target: container,
       props: {
         mode: Mode.text,
