@@ -75,9 +75,15 @@ db solution-create --name MySolution --directory ./my-project
 ```
 
 **Options:**
-- `--name`: Solution name (default: `data-builder`)
-- `--directory`: Output directory (default: current directory)
-- `--json-file`: JSON schema file (optional, opens editor if not provided)
+| Option | Alias | Description | Default |
+|--------|-------|-------------|---------|
+| `--name` | `-n` | Solution name (required) | - |
+| `--directory` | `-d` | Output directory | Current directory |
+| `--json-file` | `-j` | JSON schema file (opens editor if not provided) | - |
+| `--bucket` | `-b` | Couchbase bucket name | `general` |
+| `--scope` | `-s` | Couchbase scope name | `general` |
+| `--collection` | `-c` | Couchbase collection name | Entity name |
+| `--use-type-discriminator` | - | Use shared collection with type field | `false` |
 
 ### `model-add`
 
@@ -88,7 +94,13 @@ db model-add --json-file product.json
 ```
 
 **Options:**
-- `--json-file`: JSON schema file (optional, opens editor if not provided)
+| Option | Alias | Description | Default |
+|--------|-------|-------------|---------|
+| `--json-file` | `-j` | JSON schema file (opens editor if not provided) | - |
+| `--bucket` | `-b` | Couchbase bucket name | `general` |
+| `--scope` | `-s` | Couchbase scope name | `general` |
+| `--collection` | `-c` | Couchbase collection name | Entity name |
+| `--use-type-discriminator` | - | Use shared collection with type field | `false` |
 
 **Requirements:**
 - Must run from within a solution created by `solution-create`
@@ -141,6 +153,52 @@ The ID field maps directly to Couchbase's `Meta.id()` (the document key). DataBu
 ```
 
 The ID is always stored as a string and used directly as the Couchbase document key.
+
+## Couchbase Storage Options
+
+DataBuilder supports two storage strategies for Couchbase:
+
+### 1. Separate Collections (Default)
+
+Each entity is stored in its own collection within the specified bucket and scope. This is the default behavior and recommended for most use cases.
+
+```bash
+# Each entity gets its own collection (e.g., 'product', 'category')
+db solution-create -n MyApp -j entities.json -b myBucket -s myScope
+```
+
+**Generated structure:**
+- Bucket: `myBucket`
+- Scope: `myScope`
+- Collections: `product`, `category` (one per entity)
+
+### 2. Shared Collection with Type Discriminator
+
+All entities share a single collection and use a `type` field to distinguish between entity types. Useful for simpler setups or when you want all data in one collection.
+
+```bash
+# All entities in 'general' collection with type discriminator
+db solution-create -n MyApp -j entities.json --use-type-discriminator
+```
+
+**Generated structure:**
+- Bucket: `general`
+- Scope: `general`
+- Collection: `general`
+- Documents include `"type": "product"` or `"type": "category"` field
+
+### Custom Configuration Examples
+
+```bash
+# Custom bucket and scope, separate collections per entity
+db solution-create -n MyApp -j entities.json -b enterprise -s sales
+
+# Custom bucket with type discriminator (all in one collection)
+db solution-create -n MyApp -j entities.json -b enterprise -s sales --use-type-discriminator
+
+# Force specific collection name for all entities
+db solution-create -n MyApp -j entities.json -b enterprise -s sales -c documents --use-type-discriminator
+```
 
 ## Project Structure
 
