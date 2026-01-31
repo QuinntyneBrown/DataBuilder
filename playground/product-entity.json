@@ -1,0 +1,9 @@
+{
+  "product": {
+    "name": "Sample Product",
+    "description": "A great product",
+    "price": 99.99,
+    "inStock": true,
+    "releaseDate": "2024-12-31"
+  }
+}

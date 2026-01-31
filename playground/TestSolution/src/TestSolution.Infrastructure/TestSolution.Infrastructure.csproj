@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QuinntyneBrown.Gateway.Core" Version="1.0.0" />
+    <PackageReference Include="CouchbaseNetClient" Version="3.6.3" />
+    <PackageReference Include="Couchbase.Extensions.DependencyInjection" Version="3.6.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TestSolution.Core\TestSolution.Core.csproj" />
+  </ItemGroup>
+
+</Project>

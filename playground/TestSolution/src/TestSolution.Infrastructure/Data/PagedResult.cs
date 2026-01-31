@@ -1,0 +1,43 @@
+namespace TestSolution.Infrastructure.Data;
+
+/// <summary>
+/// Represents a paged result set.
+/// </summary>
+/// <typeparam name="T">The type of items in the result.</typeparam>
+public class PagedResult<T>
+{
+    /// <summary>
+    /// The items in this page.
+    /// </summary>
+    public IEnumerable<T> Data { get; set; } = Enumerable.Empty<T>();
+
+    /// <summary>
+    /// The zero-based page index.
+    /// </summary>
+    public int PageIndex { get; set; }
+
+    /// <summary>
+    /// The number of items per page.
+    /// </summary>
+    public int PageSize { get; set; }
+
+    /// <summary>
+    /// The total number of items across all pages.
+    /// </summary>
+    public int TotalCount { get; set; }
+
+    /// <summary>
+    /// The total number of pages.
+    /// </summary>
+    public int TotalPages { get; set; }
+
+    /// <summary>
+    /// Whether there is a previous page.
+    /// </summary>
+    public bool HasPreviousPage => PageIndex > 0;
+
+    /// <summary>
+    /// Whether there is a next page.
+    /// </summary>
+    public bool HasNextPage => PageIndex < TotalPages - 1;
+}

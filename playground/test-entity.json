@@ -1,0 +1,9 @@
+{
+  "customer": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "age": 30,
+    "isActive": true,
+    "createdDate": "2024-01-01"
+  }
+}

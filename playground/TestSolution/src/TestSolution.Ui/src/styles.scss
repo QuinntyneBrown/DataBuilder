@@ -1,0 +1,87 @@
+@use '@angular/material' as mat;
+
+// Material Design 3 Dark Theme
+$dark-theme: mat.define-theme((
+  color: (
+    theme-type: dark,
+    primary: mat.$violet-palette,
+    tertiary: mat.$cyan-palette,
+  ),
+));
+
+html {
+  @include mat.all-component-themes($dark-theme);
+  @include mat.color-variants-backwards-compatibility($dark-theme);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+body {
+  background-color: var(--mat-app-background-color);
+  color: var(--mat-app-text-color);
+}
+
+// Custom scrollbar for dark theme
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+// Navigation styles
+.nav-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.main-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+}
+
+// Card enhancements
+mat-card {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+// Table enhancements
+.mat-mdc-table {
+  background: transparent;
+}
+
+.mat-mdc-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+// Form field enhancements
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+// Button enhancements
+.mat-mdc-fab.mat-primary {
+  --mdc-fab-container-color: var(--mat-primary);
+}

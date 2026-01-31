@@ -207,6 +207,63 @@ public class ApiGenerator : IApiGenerator
         _logger.LogDebug("Generated: {OutputPath}", outputPath);
     }
 
+    private async Task<string> RenderTemplateAsync(string templateName, object model, CancellationToken cancellationToken)
+    {
+        if (!_templates.TryGetValue(templateName, out var template))
+        {
+            _logger.LogError("Template not found: {TemplateName}", templateName);
+            return string.Empty;
+        }
+
+        var scriptObject = new ScriptObject();
+        scriptObject.Import(model, renamer: member => ConvertToSnakeCase(member.Name));
+
+        var context = new TemplateContext();
+        context.PushGlobal(scriptObject);
+        context.MemberRenamer = member => ConvertToSnakeCase(member.Name);
+
+        return await template.RenderAsync(context);
+    }
+
+    /// <inheritdoc />
+    public async Task<string> GenerateEntityAsync(SolutionOptions options, EntityDefinition entity, CancellationToken cancellationToken = default)
+    {
+        var entityModel = new
+        {
+            Namespace = options.CoreProjectName,
+            Entity = entity
+        };
+
+        return await RenderTemplateAsync("Entity", entityModel, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<string> GenerateRepositoryAsync(SolutionOptions options, EntityDefinition entity, CancellationToken cancellationToken = default)
+    {
+        var repositoryModel = new
+        {
+            Namespace = options.InfrastructureProjectName,
+            CoreNamespace = options.CoreProjectName,
+            Entity = entity
+        };
+
+        return await RenderTemplateAsync("Repository", repositoryModel, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<string> GenerateControllerAsync(SolutionOptions options, EntityDefinition entity, CancellationToken cancellationToken = default)
+    {
+        var controllerModel = new
+        {
+            Namespace = options.ApiProjectName,
+            CoreNamespace = options.CoreProjectName,
+            InfrastructureNamespace = options.InfrastructureProjectName,
+            Entity = entity
+        };
+
+        return await RenderTemplateAsync("Controller", controllerModel, cancellationToken);
+    }
+
     private static string ConvertToSnakeCase(string name)
     {
         if (string.IsNullOrEmpty(name))

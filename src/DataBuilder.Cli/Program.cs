@@ -36,6 +36,19 @@ class Program
             return await handler.HandleAsync(name!, directory!, jsonFile, cancellationToken);
         });
 
+        // Add model-add command
+        var modelAddCommand = new ModelAddCommand();
+        rootCommand.Subcommands.Add(modelAddCommand);
+
+        // Set handler for model-add
+        modelAddCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var jsonFile = parseResult.GetValue(modelAddCommand.JsonFileOption);
+
+            var handler = serviceProvider.GetRequiredService<ModelAddCommandHandler>();
+            return await handler.HandleAsync(jsonFile, cancellationToken);
+        });
+
         // Invoke
         return await rootCommand.Parse(args).InvokeAsync();
     }
@@ -56,6 +69,7 @@ class Program
         services.AddSingleton<IJsonEditorService, JsonEditorService>();
         services.AddSingleton<ISchemaParser, SchemaParser>();
         services.AddSingleton<ISolutionGenerator, SolutionGenerator>();
+        services.AddSingleton<IModelAddService, ModelAddService>();
 
         // Generators
         services.AddSingleton<IApiGenerator, ApiGenerator>();
@@ -63,5 +77,6 @@ class Program
 
         // Command handlers
         services.AddSingleton<SolutionCreateCommandHandler>();
+        services.AddSingleton<ModelAddCommandHandler>();
     }
 }

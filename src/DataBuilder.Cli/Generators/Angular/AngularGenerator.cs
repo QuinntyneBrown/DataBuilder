@@ -372,6 +372,56 @@ bootstrapApplication(AppComponent, appConfig)
         _logger.LogDebug("Generated: {OutputPath}", outputPath);
     }
 
+    private async Task<string> RenderTemplateAsync(string templateName, object model, CancellationToken cancellationToken)
+    {
+        if (!_templates.TryGetValue(templateName, out var template))
+        {
+            _logger.LogError("Template not found: {TemplateName}", templateName);
+            return string.Empty;
+        }
+
+        var scriptObject = new ScriptObject();
+        scriptObject.Import(model, renamer: member => ConvertToSnakeCase(member.Name));
+
+        var context = new TemplateContext();
+        context.PushGlobal(scriptObject);
+        context.MemberRenamer = member => ConvertToSnakeCase(member.Name);
+
+        return await template.RenderAsync(context);
+    }
+
+    /// <inheritdoc />
+    public async Task<string> GenerateModelAsync(EntityDefinition entity, CancellationToken cancellationToken = default)
+    {
+        var model = new { Entity = entity };
+        return await RenderTemplateAsync("model-ts", model, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<string> GenerateServiceAsync(EntityDefinition entity, CancellationToken cancellationToken = default)
+    {
+        var model = new { Entity = entity, ApiPort = 5000 }; // Default port
+        return await RenderTemplateAsync("service-ts", model, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ComponentContent> GenerateListComponentAsync(EntityDefinition entity, CancellationToken cancellationToken = default)
+    {
+        var model = new { Entity = entity };
+        var ts = await RenderTemplateAsync("list.component", model, cancellationToken);
+        // Components use inline templates/styles, so HTML and CSS are empty strings
+        return new ComponentContent(ts, string.Empty, string.Empty);
+    }
+
+    /// <inheritdoc />
+    public async Task<ComponentContent> GenerateDetailComponentAsync(EntityDefinition entity, CancellationToken cancellationToken = default)
+    {
+        var model = new { Entity = entity };
+        var ts = await RenderTemplateAsync("detail.component", model, cancellationToken);
+        // Components use inline templates/styles, so HTML and CSS are empty strings
+        return new ComponentContent(ts, string.Empty, string.Empty);
+    }
+
     private static string ConvertToSnakeCase(string name)
     {
         if (string.IsNullOrEmpty(name))
