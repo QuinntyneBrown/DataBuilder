@@ -1,6 +1,7 @@
 # DataBuilder
 
 [![NuGet](https://img.shields.io/nuget/v/QuinntyneBrown.DataBuilder.Cli.svg)](https://www.nuget.org/packages/QuinntyneBrown.DataBuilder.Cli/)
+[![Build](https://github.com/QuinntyneBrown/DataBuilder/actions/workflows/publish-nuget.yml/badge.svg)](https://github.com/QuinntyneBrown/DataBuilder/actions/workflows/publish-nuget.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A CLI tool for scaffolding full-stack applications with a C# N-Tier API backend and Angular frontend.
@@ -18,9 +19,11 @@ DataBuilder (`db`) is a .NET global tool that generates complete full-stack solu
   - Service, Repository, and Controller layers
 
 - **Angular Frontend**
+  - Angular Material components throughout
   - Material Design 3 dark theme
   - Admin interface with list and detail views
-  - Pre-configured API integration
+  - Responsive sidenav layout with toolbar
+  - Pre-configured API integration with HttpClient
 
 - **Schema-Driven Generation**
   - Define data models with JSON
@@ -36,9 +39,30 @@ DataBuilder (`db`) is a .NET global tool that generates complete full-stack solu
 ```bash
 # Install from NuGet
 dotnet tool install --global QuinntyneBrown.DataBuilder.Cli
+
+# Update to latest version
+dotnet tool update --global QuinntyneBrown.DataBuilder.Cli
 ```
 
 After installation, the `db` command will be available globally.
+
+## Quick Start
+
+```bash
+# 1. Create a new solution with initial entities
+db solution-create --name MyApp --directory ./my-app --json-file entities.json
+
+# 2. Navigate to generated solution
+cd my-app/src/MyApp.Api
+
+# 3. Run the API
+dotnet run
+
+# 4. In another terminal, run the Angular UI
+cd my-app/src/MyApp.Ui
+npm install
+ng serve
+```
 
 ## Commands
 
@@ -155,7 +179,8 @@ DataBuilder/
 | Templating | Scriban |
 | String Utilities | Humanizer |
 | Generated Backend | .NET 9.0, Couchbase, Gateway.Core |
-| Generated Frontend | Angular, Material Design |
+| Generated Frontend | Angular 19, Angular Material, RxJS |
+| CI/CD | GitHub Actions |
 
 ## Development
 
@@ -168,6 +193,14 @@ dotnet build src/DataBuilder.Cli -c Release
 dotnet pack src/DataBuilder.Cli -c Release
 dotnet tool install -g QuinntyneBrown.DataBuilder.Cli --add-source src/DataBuilder.Cli/nupkg
 ```
+
+### CI/CD
+
+The project uses GitHub Actions for continuous integration and deployment:
+
+- **Automatic publishing**: Every push to `main` that modifies `src/DataBuilder.Cli/**` triggers a new NuGet release
+- **Versioning**: Uses `{major}.{minor}.{run_number}` format (e.g., 1.0.42)
+- **GitHub Releases**: Each publish creates a tagged release with installation instructions
 
 ## Documentation
 
