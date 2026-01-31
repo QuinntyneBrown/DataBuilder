@@ -1,0 +1,9 @@
+{
+  "product": {
+    "name": "Sample Product",
+    "description": "A detailed product description",
+    "price": 99.99,
+    "inStock": true,
+    "category": "Electronics"
+  }
+}

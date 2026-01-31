@@ -1,0 +1,9 @@
+{
+  "order": {
+    "customerName": "John Doe",
+    "orderDate": "2024-12-31",
+    "totalAmount": 249.99,
+    "status": "pending",
+    "isShipped": false
+  }
+}

@@ -157,7 +157,7 @@ public class ModelAddService : IModelAddService
     private async Task UpdateAppRoutesAsync(SolutionOptions solutionOptions, EntityDefinition entity, CancellationToken cancellationToken)
     {
         var filePath = Path.Combine(solutionOptions.UiProjectDirectory, "src", "app", "app.routes.ts");
-        
+
         if (!File.Exists(filePath))
         {
             _logger.LogWarning("app.routes.ts not found at {Path}", filePath);
@@ -165,33 +165,28 @@ public class ModelAddService : IModelAddService
         }
 
         var content = await File.ReadAllTextAsync(filePath, cancellationToken);
-        
-        // Add route entry with lazy loading pattern
-        var routeEntry = $@"  {{
-    path: '{entity.NamePluralKebabCase}',
-    children: [
-      {{
-        path: '',
+
+        // Add route entry with lazy loading pattern (indentation for inside children array)
+        var routeEntry = $@"      {{
+        path: '{entity.NamePluralKebabCase}',
         loadComponent: () => import('./features/{entity.NameKebabCase}/{entity.NameKebabCase}-list/{entity.NameKebabCase}-list.component')
           .then(m => m.{entity.Name}ListComponent)
       }},
       {{
-        path: 'new',
+        path: '{entity.NamePluralKebabCase}/new',
         loadComponent: () => import('./features/{entity.NameKebabCase}/{entity.NameKebabCase}-detail/{entity.NameKebabCase}-detail.component')
           .then(m => m.{entity.Name}DetailComponent)
       }},
       {{
-        path: ':id',
+        path: '{entity.NamePluralKebabCase}/:id',
         loadComponent: () => import('./features/{entity.NameKebabCase}/{entity.NameKebabCase}-detail/{entity.NameKebabCase}-detail.component')
           .then(m => m.{entity.Name}DetailComponent)
-      }}
-    ]
-  }},";
-        
-        // Find where to insert the route (before the default routes)
-        var redirectPattern = @"  \{\s*path:\s*'',\s*redirectTo:";
+      }},";
+
+        // Find where to insert the route (before the default redirect route in children array)
+        var redirectPattern = @"(\s+)\{\s*path:\s*'',\s*redirectTo:";
         var redirectMatch = Regex.Match(content, redirectPattern);
-        
+
         if (redirectMatch.Success)
         {
             var insertPosition = redirectMatch.Index;
@@ -204,26 +199,27 @@ public class ModelAddService : IModelAddService
 
     private async Task UpdateAppComponentAsync(SolutionOptions solutionOptions, EntityDefinition entity, CancellationToken cancellationToken)
     {
-        var filePath = Path.Combine(solutionOptions.UiProjectDirectory, "src", "app", "app.component.ts");
-        
+        // Update the main-layout component which contains the navigation
+        var filePath = Path.Combine(solutionOptions.UiProjectDirectory, "src", "app", "layouts", "main-layout", "main-layout.component.ts");
+
         if (!File.Exists(filePath))
         {
-            _logger.LogWarning("app.component.ts not found at {Path}", filePath);
+            _logger.LogWarning("main-layout.component.ts not found at {Path}", filePath);
             return;
         }
 
         var content = await File.ReadAllTextAsync(filePath, cancellationToken);
-        
+
         // Add navigation item to the mat-nav-list
-        var navItem = $@"            <a mat-list-item routerLink=""/{entity.NamePluralKebabCase}"" routerLinkActive=""active"">
-              <mat-icon matListItemIcon>list</mat-icon>
-              <span matListItemTitle>{entity.DisplayNamePlural}</span>
-            </a>";
-        
+        var navItem = $@"              <a mat-list-item routerLink=""/{entity.NamePluralKebabCase}"" routerLinkActive=""active-link"">
+                <mat-icon matListItemIcon>{entity.Icon}</mat-icon>
+                <span matListItemTitle>{entity.DisplayNamePlural}</span>
+              </a>";
+
         // Find the </mat-nav-list> closing tag
-        var navListPattern = @"(          </mat-nav-list>)";
+        var navListPattern = @"(\s*</mat-nav-list>)";
         var navListMatch = Regex.Match(content, navListPattern);
-        
+
         if (navListMatch.Success)
         {
             var insertPosition = navListMatch.Index;
@@ -231,6 +227,6 @@ public class ModelAddService : IModelAddService
         }
 
         await File.WriteAllTextAsync(filePath, content, cancellationToken);
-        _logger.LogInformation("Updated app.component.ts");
+        _logger.LogInformation("Updated main-layout.component.ts");
     }
 }
