@@ -30,7 +30,7 @@ public class SolutionOptions
     /// <summary>
     /// The full path to the solution directory.
     /// </summary>
-    public string SolutionDirectory => Path.Combine(Directory, NameKebabCase);
+    public string SolutionDirectory => Path.Combine(Directory, NamePascalCase);
 
     /// <summary>
     /// The full path to the src directory.

@@ -35,7 +35,7 @@ class Program
         Directory.CreateDirectory(outputDirectory);
 
         // Clean up previous output if it exists
-        var targetDir = Path.Combine(outputDirectory, solutionName);
+        var targetDir = Path.Combine(outputDirectory, ToPascalCase(solutionName));
         if (Directory.Exists(targetDir))
         {
             System.Console.WriteLine($"Removing existing directory: {targetDir}");
@@ -62,8 +62,8 @@ class Program
             System.Console.WriteLine($"Location: {targetDir}");
             System.Console.WriteLine();
             System.Console.WriteLine("Project Structure:");
-            System.Console.WriteLine($"  {solutionName}/");
-            System.Console.WriteLine($"    ├── {solutionName}.sln");
+            System.Console.WriteLine($"  {ToPascalCase(solutionName)}/");
+            System.Console.WriteLine($"    ├── {ToPascalCase(solutionName)}.sln");
             System.Console.WriteLine($"    └── src/");
             System.Console.WriteLine($"        ├── {ToPascalCase(solutionName)}.Core/");
             System.Console.WriteLine($"        ├── {ToPascalCase(solutionName)}.Infrastructure/");

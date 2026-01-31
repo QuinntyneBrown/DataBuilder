@@ -50,7 +50,7 @@ public class SolutionGenerator : ISolutionGenerator
 
     private async Task GenerateSolutionFileAsync(SolutionOptions options, CancellationToken cancellationToken)
     {
-        var solutionPath = Path.Combine(options.SolutionDirectory, $"{options.NameKebabCase}.sln");
+        var solutionPath = Path.Combine(options.SolutionDirectory, $"{options.NamePascalCase}.sln");
 
         var coreProjectGuid = Guid.NewGuid().ToString("D").ToUpperInvariant();
         var infraProjectGuid = Guid.NewGuid().ToString("D").ToUpperInvariant();
