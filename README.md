@@ -1,5 +1,8 @@
 # DataBuilder
 
+[![NuGet](https://img.shields.io/nuget/v/QuinntyneBrown.DataBuilder.Cli.svg)](https://www.nuget.org/packages/QuinntyneBrown.DataBuilder.Cli/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A CLI tool for scaffolding full-stack applications with a C# N-Tier API backend and Angular frontend.
 
 ## Overview
@@ -31,13 +34,11 @@ DataBuilder (`db`) is a .NET global tool that generates complete full-stack solu
 ## Installation
 
 ```bash
-# Install globally
-dotnet tool install --global DataBuilder.Cli
-
-# Or build and install locally
-dotnet pack
-dotnet tool install --global --add-source ./nupkg DataBuilder.Cli
+# Install from NuGet
+dotnet tool install --global QuinntyneBrown.DataBuilder.Cli
 ```
+
+After installation, the `db` command will be available globally.
 
 ## Commands
 
@@ -165,9 +166,13 @@ eng\scripts\install-tool.bat
 # Or manually:
 dotnet build src/DataBuilder.Cli -c Release
 dotnet pack src/DataBuilder.Cli -c Release
-dotnet tool install -g DataBuilder.Cli --add-source src/DataBuilder.Cli/nupkg
+dotnet tool install -g QuinntyneBrown.DataBuilder.Cli --add-source src/DataBuilder.Cli/nupkg
 ```
 
 ## Documentation
 
 - [Admin UI Implementation Guide](docs/ADMIN-UI-IMPLEMENTATION-GUIDE.md) - Material Design 3 dark theme patterns for generated UIs
+
+## License
+
+MIT

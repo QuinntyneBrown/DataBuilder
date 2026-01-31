@@ -23,10 +23,10 @@ if errorlevel 1 (
 )
 
 echo Uninstalling existing tool (if installed)...
-dotnet tool uninstall -g DataBuilder.Cli 2>nul
+dotnet tool uninstall -g QuinntyneBrown.DataBuilder.Cli 2>nul
 
 echo Installing tool from local package...
-dotnet tool install -g DataBuilder.Cli --add-source "%NUPKG_PATH%"
+dotnet tool install -g QuinntyneBrown.DataBuilder.Cli --add-source "%NUPKG_PATH%"
 if errorlevel 1 (
     echo Install failed.
     popd
