@@ -1,0 +1,89 @@
+name: Publish to NuGet
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/DataBuilder.Cli/**'
+      - '.github/workflows/publish-nuget.yml'
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  PROJECT_PATH: 'src/DataBuilder.Cli/DataBuilder.Cli.csproj'
+  PACKAGE_OUTPUT_PATH: 'src/DataBuilder.Cli/nupkg'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for version calculation
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Calculate version
+        id: version
+        run: |
+          # Get base version from csproj
+          BASE_VERSION=$(grep -oP '(?<=<Version>)[^<]+' ${{ env.PROJECT_PATH }} | head -1)
+          MAJOR=$(echo $BASE_VERSION | cut -d. -f1)
+          MINOR=$(echo $BASE_VERSION | cut -d. -f2)
+
+          # Use GitHub run number for patch version to ensure unique versions
+          PATCH=${{ github.run_number }}
+
+          VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Calculated version: $VERSION"
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
+
+      - name: Pack
+        run: |
+          dotnet pack ${{ env.PROJECT_PATH }} \
+            --configuration Release \
+            --no-build \
+            --output ${{ env.PACKAGE_OUTPUT_PATH }} \
+            -p:PackageVersion=${{ steps.version.outputs.version }}
+
+      - name: Push to NuGet
+        run: |
+          dotnet nuget push ${{ env.PACKAGE_OUTPUT_PATH }}/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          body: |
+            ## DataBuilder CLI v${{ steps.version.outputs.version }}
+
+            ### Installation
+            ```bash
+            dotnet tool install --global QuinntyneBrown.DataBuilder.Cli
+            ```
+
+            ### Update
+            ```bash
+            dotnet tool update --global QuinntyneBrown.DataBuilder.Cli
+            ```
+
+            [View on NuGet](https://www.nuget.org/packages/QuinntyneBrown.DataBuilder.Cli/${{ steps.version.outputs.version }})
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
