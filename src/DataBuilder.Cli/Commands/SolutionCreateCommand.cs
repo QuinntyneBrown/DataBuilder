@@ -14,6 +14,10 @@ public class SolutionCreateCommand : Command
     public Option<string> NameOption { get; }
     public Option<string> DirectoryOption { get; }
     public Option<FileInfo?> JsonFileOption { get; }
+    public Option<bool> UseTypeDiscriminatorOption { get; }
+    public Option<string> BucketOption { get; }
+    public Option<string> ScopeOption { get; }
+    public Option<string?> CollectionOption { get; }
 
     public SolutionCreateCommand() : base("solution-create", "Create a new full-stack solution with C# API and Angular frontend")
     {
@@ -31,9 +35,31 @@ public class SolutionCreateCommand : Command
         JsonFileOption.Description = "Path to a JSON file defining entities (skips interactive editor)";
         JsonFileOption.Aliases.Add("-j");
 
+        UseTypeDiscriminatorOption = new Option<bool>("--use-type-discriminator");
+        UseTypeDiscriminatorOption.Description = "Use a type discriminator field instead of separate collections per entity (default: false)";
+        UseTypeDiscriminatorOption.DefaultValueFactory = (_) => false;
+
+        BucketOption = new Option<string>("--bucket");
+        BucketOption.Description = "The Couchbase bucket name (default: general)";
+        BucketOption.Aliases.Add("-b");
+        BucketOption.DefaultValueFactory = (_) => "general";
+
+        ScopeOption = new Option<string>("--scope");
+        ScopeOption.Description = "The Couchbase scope name (default: general)";
+        ScopeOption.Aliases.Add("-s");
+        ScopeOption.DefaultValueFactory = (_) => "general";
+
+        CollectionOption = new Option<string?>("--collection");
+        CollectionOption.Description = "The Couchbase collection name (default: entity name when not using type discriminator, 'general' otherwise)";
+        CollectionOption.Aliases.Add("-c");
+
         Options.Add(NameOption);
         Options.Add(DirectoryOption);
         Options.Add(JsonFileOption);
+        Options.Add(UseTypeDiscriminatorOption);
+        Options.Add(BucketOption);
+        Options.Add(ScopeOption);
+        Options.Add(CollectionOption);
     }
 }
 
@@ -51,7 +77,7 @@ public class SolutionCreateCommandHandler
         _logger = logger;
     }
 
-    public async Task<int> HandleAsync(string name, string directory, FileInfo? jsonFile, CancellationToken cancellationToken)
+    public async Task<int> HandleAsync(string name, string directory, FileInfo? jsonFile, bool useTypeDiscriminator, string bucket, string scope, string? collection, CancellationToken cancellationToken)
     {
         try
         {
@@ -115,12 +141,26 @@ public class SolutionCreateCommandHandler
             _logger.LogInformation("Found {Count} entities: {Names}",
                 entities.Count, string.Join(", ", entities.Select(e => e.Name)));
 
+            // Apply Couchbase settings to each entity
+            foreach (var entity in entities)
+            {
+                entity.UseTypeDiscriminator = useTypeDiscriminator;
+                entity.Bucket = bucket;
+                entity.Scope = scope;
+                if (collection != null)
+                {
+                    entity.CollectionOverride = collection;
+                }
+            }
+
             // Create solution options
             var options = new SolutionOptions
             {
                 Name = name,
                 Directory = directory,
-                Entities = entities
+                Entities = entities,
+                DefaultBucket = bucket,
+                DefaultScope = scope
             };
 
             // Generate the solution

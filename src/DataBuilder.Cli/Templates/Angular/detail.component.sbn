@@ -35,7 +35,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
     <div class="page-container">
       <!-- Breadcrumb -->
       <nav class="breadcrumb">
-        <a routerLink="../">{{ entity.display_name_plural }}</a>
+        <a routerLink="../" mat-button color="primary" class="breadcrumb-link">{{ entity.display_name_plural }}</a>
         <mat-icon class="breadcrumb__separator">chevron_right</mat-icon>
         <span>{{ '{{' }} isNew() ? 'New {{ entity.display_name }}' : '{{ entity.display_name }} Details' {{ '}}' }}</span>
       </nav>
@@ -167,45 +167,34 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
   `,
   styles: [`
     .page-container {
-      padding: var(--spacing-xl);
+      padding: 32px;
       max-width: 900px;
       margin: 0 auto;
     }
 
-    /* Breadcrumb */
     .breadcrumb {
       display: flex;
       align-items: center;
-      gap: var(--spacing-sm);
-      margin-bottom: var(--spacing-lg);
+      gap: 4px;
+      margin-bottom: 24px;
       font-size: 14px;
     }
 
-    .breadcrumb a {
-      color: var(--primary-500);
-      text-decoration: none;
-      transition: text-decoration var(--transition-fast);
-    }
-
-    .breadcrumb a:hover {
-      text-decoration: underline;
+    .breadcrumb-link {
+      min-width: auto;
+      padding: 0 8px;
     }
 
     .breadcrumb__separator {
       font-size: 18px;
-      color: var(--text-secondary);
+      opacity: 0.7;
     }
 
-    .breadcrumb span {
-      color: var(--text-primary);
-    }
-
-    /* Page Header */
     .page-header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: var(--spacing-xl);
+      margin-bottom: 32px;
     }
 
     .page-header__info {
@@ -215,54 +204,49 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
     .page-title {
       font-size: 28px;
       font-weight: 400;
-      margin: 0 0 var(--spacing-xs) 0;
-      color: var(--text-primary);
+      margin: 0 0 4px 0;
     }
 
     .page-subtitle {
       font-size: 14px;
-      color: var(--text-secondary);
       margin: 0;
+      opacity: 0.7;
     }
 
     .action-buttons {
       display: flex;
-      gap: var(--spacing-sm);
+      gap: 8px;
     }
 
-    /* Form Card */
     .form-card {
-      border-radius: var(--radius-md);
-      margin-bottom: var(--spacing-lg);
+      margin-bottom: 24px;
       overflow: hidden;
     }
 
     .card-header {
-      padding: var(--spacing-lg);
+      padding: 24px;
     }
 
     .card-title {
       font-size: 18px;
       font-weight: 500;
-      margin: 0 0 var(--spacing-xs) 0;
-      color: var(--text-primary);
+      margin: 0 0 4px 0;
     }
 
     .card-subtitle {
       font-size: 12px;
-      color: var(--text-secondary);
       margin: 0;
+      opacity: 0.7;
     }
 
     .card-content {
-      padding: var(--spacing-lg);
+      padding: 24px;
     }
 
-    /* Form Layout */
     .form-row {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: var(--spacing-lg);
+      gap: 24px;
     }
 
     .form-field {
@@ -282,21 +266,12 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
       font-family: 'Roboto Mono', monospace;
     }
 
-    /* Disabled mat-form-field styling */
-    mat-form-field.form-field input.monospace:disabled {
-      font-family: 'Roboto Mono', monospace;
-      color: var(--text-secondary);
-    }
-
-    /* Toggle Field */
     .toggle-field {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: var(--spacing-md);
-      background-color: var(--surface-elevated);
-      border-radius: var(--radius-sm);
-      margin-bottom: var(--spacing-md);
+      padding: 16px;
+      margin-bottom: 16px;
     }
 
     .toggle-field:last-child {
@@ -310,23 +285,20 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
 
     .toggle-label__title {
       font-weight: 500;
-      margin-bottom: var(--spacing-xs);
-      color: var(--text-primary);
+      margin-bottom: 4px;
     }
 
     .toggle-label__description {
       font-size: 12px;
-      color: var(--text-secondary);
+      opacity: 0.7;
     }
 
-    /* Loading */
     .loading {
       display: flex;
       justify-content: center;
       padding: 64px;
     }
 
-    /* Responsive */
     @media (max-width: 768px) {
       .form-row {
         grid-template-columns: 1fr;
@@ -334,7 +306,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
 
       .page-header {
         flex-direction: column;
-        gap: var(--spacing-md);
+        gap: 16px;
       }
 
       .action-buttons {

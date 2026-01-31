@@ -14,6 +14,10 @@ namespace DataBuilder.Cli.Commands;
 public class ModelAddCommand : Command
 {
     public Option<FileInfo?> JsonFileOption { get; }
+    public Option<bool> UseTypeDiscriminatorOption { get; }
+    public Option<string> BucketOption { get; }
+    public Option<string> ScopeOption { get; }
+    public Option<string?> CollectionOption { get; }
 
     public ModelAddCommand() : base("model-add", "Add a new model with CRUD operations to an existing solution")
     {
@@ -21,7 +25,29 @@ public class ModelAddCommand : Command
         JsonFileOption.Description = "Path to a JSON file defining the entity (skips interactive editor)";
         JsonFileOption.Aliases.Add("-j");
 
+        UseTypeDiscriminatorOption = new Option<bool>("--use-type-discriminator");
+        UseTypeDiscriminatorOption.Description = "Use a type discriminator field instead of separate collections per entity (default: false)";
+        UseTypeDiscriminatorOption.DefaultValueFactory = (_) => false;
+
+        BucketOption = new Option<string>("--bucket");
+        BucketOption.Description = "The Couchbase bucket name (default: general)";
+        BucketOption.Aliases.Add("-b");
+        BucketOption.DefaultValueFactory = (_) => "general";
+
+        ScopeOption = new Option<string>("--scope");
+        ScopeOption.Description = "The Couchbase scope name (default: general)";
+        ScopeOption.Aliases.Add("-s");
+        ScopeOption.DefaultValueFactory = (_) => "general";
+
+        CollectionOption = new Option<string?>("--collection");
+        CollectionOption.Description = "The Couchbase collection name (default: entity name when not using type discriminator, 'general' otherwise)";
+        CollectionOption.Aliases.Add("-c");
+
         Options.Add(JsonFileOption);
+        Options.Add(UseTypeDiscriminatorOption);
+        Options.Add(BucketOption);
+        Options.Add(ScopeOption);
+        Options.Add(CollectionOption);
     }
 }
 
@@ -39,7 +65,7 @@ public class ModelAddCommandHandler
         _logger = logger;
     }
 
-    public async Task<int> HandleAsync(FileInfo? jsonFile, CancellationToken cancellationToken)
+    public async Task<int> HandleAsync(FileInfo? jsonFile, bool useTypeDiscriminator, string bucket, string scope, string? collection, CancellationToken cancellationToken)
     {
         try
         {
@@ -125,6 +151,16 @@ public class ModelAddCommandHandler
             }
 
             var entity = entities[0];
+
+            // Apply Couchbase settings to the entity
+            entity.UseTypeDiscriminator = useTypeDiscriminator;
+            entity.Bucket = bucket;
+            entity.Scope = scope;
+            if (collection != null)
+            {
+                entity.CollectionOverride = collection;
+            }
+
             _logger.LogInformation("Adding entity: {Name}", entity.Name);
 
             // Check if entity already exists

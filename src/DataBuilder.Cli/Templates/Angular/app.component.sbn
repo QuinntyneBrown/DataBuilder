@@ -58,9 +58,6 @@ import { MatListModule } from '@angular/material/list';
     mat-sidenav {
       width: 240px;
     }
-    .active {
-      background: rgba(255, 255, 255, 0.1);
-    }
   `]
 })
 export class AppComponent {

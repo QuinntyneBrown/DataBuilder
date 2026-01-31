@@ -31,9 +31,13 @@ class Program
             var name = parseResult.GetValue(solutionCreateCommand.NameOption);
             var directory = parseResult.GetValue(solutionCreateCommand.DirectoryOption);
             var jsonFile = parseResult.GetValue(solutionCreateCommand.JsonFileOption);
+            var useTypeDiscriminator = parseResult.GetValue(solutionCreateCommand.UseTypeDiscriminatorOption);
+            var bucket = parseResult.GetValue(solutionCreateCommand.BucketOption);
+            var scope = parseResult.GetValue(solutionCreateCommand.ScopeOption);
+            var collection = parseResult.GetValue(solutionCreateCommand.CollectionOption);
 
             var handler = serviceProvider.GetRequiredService<SolutionCreateCommandHandler>();
-            return await handler.HandleAsync(name!, directory!, jsonFile, cancellationToken);
+            return await handler.HandleAsync(name!, directory!, jsonFile, useTypeDiscriminator, bucket!, scope!, collection, cancellationToken);
         });
 
         // Add model-add command
@@ -44,9 +48,13 @@ class Program
         modelAddCommand.SetAction(async (parseResult, cancellationToken) =>
         {
             var jsonFile = parseResult.GetValue(modelAddCommand.JsonFileOption);
+            var useTypeDiscriminator = parseResult.GetValue(modelAddCommand.UseTypeDiscriminatorOption);
+            var bucket = parseResult.GetValue(modelAddCommand.BucketOption);
+            var scope = parseResult.GetValue(modelAddCommand.ScopeOption);
+            var collection = parseResult.GetValue(modelAddCommand.CollectionOption);
 
             var handler = serviceProvider.GetRequiredService<ModelAddCommandHandler>();
-            return await handler.HandleAsync(jsonFile, cancellationToken);
+            return await handler.HandleAsync(jsonFile, useTypeDiscriminator, bucket!, scope!, collection, cancellationToken);
         });
 
         // Invoke

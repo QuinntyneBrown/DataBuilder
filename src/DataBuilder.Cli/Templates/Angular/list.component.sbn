@@ -96,7 +96,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
                       <mat-icon>visibility</mat-icon>
                       <span>View Details</span>
                     </button>
-                    <button mat-menu-item (click)="delete(item)" class="delete-action">
+                    <button mat-menu-item (click)="delete(item)">
                       <mat-icon color="warn">delete</mat-icon>
                       <span>Delete</span>
                     </button>
@@ -139,17 +139,16 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
   `,
   styles: [`
     .page-container {
-      padding: var(--spacing-xl);
+      padding: 32px;
       max-width: 1400px;
       margin: 0 auto;
     }
 
-    /* Page Header */
     .page-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: var(--spacing-xl);
+      margin-bottom: 32px;
     }
 
     .page-header__info {
@@ -159,29 +158,26 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
     .page-title {
       font-size: 28px;
       font-weight: 400;
-      margin: 0 0 var(--spacing-xs) 0;
-      color: var(--text-primary);
+      margin: 0 0 4px 0;
     }
 
     .page-subtitle {
       font-size: 14px;
-      color: var(--text-secondary);
       margin: 0;
+      opacity: 0.7;
     }
 
     .add-button {
       height: 36px;
-      padding: 0 var(--spacing-lg);
+      padding: 0 24px;
       font-weight: 500;
     }
 
-    /* Filter Bar */
     .filter-bar {
       display: flex;
-      gap: var(--spacing-md);
-      margin-bottom: var(--spacing-lg);
-      padding: var(--spacing-md);
-      border-radius: var(--radius-md);
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 16px;
     }
 
     .search-field {
@@ -193,9 +189,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
       display: none;
     }
 
-    /* Table Card */
     .table-card {
-      border-radius: var(--radius-md);
       overflow: hidden;
     }
 
@@ -203,14 +197,10 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
       width: 100%;
     }
 
-    .table-row:hover {
-      background-color: var(--surface-hover);
-    }
-
     .cell-id {
       font-family: 'Roboto Mono', monospace;
       font-size: 12px;
-      color: var(--text-secondary);
+      opacity: 0.7;
     }
 
     .monospace {
@@ -219,39 +209,31 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
 
     .actions-cell {
       display: flex;
-      gap: var(--spacing-xs);
+      gap: 4px;
     }
 
     .no-data-row td {
       text-align: center;
       padding: 48px;
-      color: var(--text-secondary);
+      opacity: 0.7;
     }
 
-    /* Pagination */
     .pagination {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: var(--spacing-sm) var(--spacing-md);
-      border-top: 1px solid var(--surface-divider);
+      padding: 8px 16px;
     }
 
     .pagination__info {
       font-size: 14px;
-      color: var(--text-secondary);
+      opacity: 0.7;
     }
 
-    /* Loading */
     .loading {
       display: flex;
       justify-content: center;
       padding: 64px;
-    }
-
-    /* Delete action in menu */
-    .delete-action {
-      color: var(--warn-500);
     }
   `]
 })

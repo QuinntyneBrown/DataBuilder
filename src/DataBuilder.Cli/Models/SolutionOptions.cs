@@ -83,9 +83,19 @@ public class SolutionOptions
     public List<EntityDefinition> Entities { get; set; } = new();
 
     /// <summary>
-    /// The Couchbase bucket name.
+    /// The default Couchbase bucket name.
     /// </summary>
-    public string CouchbaseBucket => NamePascalCase;
+    public string DefaultBucket { get; set; } = "general";
+
+    /// <summary>
+    /// The default Couchbase scope name.
+    /// </summary>
+    public string DefaultScope { get; set; } = "general";
+
+    /// <summary>
+    /// The Couchbase bucket name (uses DefaultBucket).
+    /// </summary>
+    public string CouchbaseBucket => DefaultBucket;
 
     /// <summary>
     /// The API port number.

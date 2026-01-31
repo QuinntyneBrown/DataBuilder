@@ -109,6 +109,33 @@ public class EntityDefinition
     /// </summary>
     public string Icon => GetDefaultIcon();
 
+    /// <summary>
+    /// Whether to use a type discriminator field in documents.
+    /// When false (default), each entity is stored in its own collection.
+    /// </summary>
+    public bool UseTypeDiscriminator { get; set; } = false;
+
+    /// <summary>
+    /// The Couchbase bucket name for this entity.
+    /// </summary>
+    public string Bucket { get; set; } = "general";
+
+    /// <summary>
+    /// The Couchbase scope name for this entity.
+    /// </summary>
+    public string Scope { get; set; } = "general";
+
+    /// <summary>
+    /// The Couchbase collection name for this entity.
+    /// When UseTypeDiscriminator is false, defaults to the entity name in camelCase.
+    /// </summary>
+    public string? CollectionOverride { get; set; }
+
+    /// <summary>
+    /// The effective collection name for this entity.
+    /// </summary>
+    public string Collection => CollectionOverride ?? (UseTypeDiscriminator ? "general" : NameCamelCase);
+
     private string GetDefaultIcon()
     {
         var nameLower = Name.ToLowerInvariant();

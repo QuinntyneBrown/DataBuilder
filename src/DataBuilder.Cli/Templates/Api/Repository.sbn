@@ -29,9 +29,12 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
 {
     private readonly IBucketProvider _bucketProvider;
     private readonly ILogger<{{ entity.name }}Repository> _logger;
-    private const string BucketName = "{{ bucket_name }}";
-    private const string CollectionName = "{{ entity.name_camel_case }}";
+    private const string BucketName = "{{ entity.bucket }}";
+    private const string ScopeName = "{{ entity.scope }}";
+    private const string CollectionName = "{{ entity.collection }}";
+{{~ if entity.use_type_discriminator ~}}
     private const string DocumentType = "{{ entity.name_camel_case }}";
+{{~ end ~}}
 
     public {{ entity.name }}Repository(
         IBucketProvider bucketProvider,
@@ -44,7 +47,8 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
     private async Task<ICouchbaseCollection> GetCollectionAsync()
     {
         var bucket = await _bucketProvider.GetBucketAsync(BucketName);
-        return await bucket.DefaultCollectionAsync();
+        var scope = bucket.Scope(ScopeName);
+        return scope.Collection(CollectionName);
     }
 
     public async Task<{{ entity.name }}?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
@@ -70,14 +74,16 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
     public async Task<IEnumerable<{{ entity.name }}>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var bucket = await _bucketProvider.GetBucketAsync(BucketName);
-        var scope = await bucket.DefaultScopeAsync();
+        var scope = bucket.Scope(ScopeName);
 
         var filter = new FilterBuilder<{{ entity.name }}>();
+{{~ if entity.use_type_discriminator ~}}
         filter.Where("type", DocumentType);
+{{~ end ~}}
         filter.OrderBy("{{ entity.id_property_name_camel_case }}", descending: false);
 
         var whereClause = filter.Build();
-        var query = $"SELECT META().id AS {{ entity.id_property_name_camel_case }}, e.* FROM `{BucketName}`.`_default`.`_default` e {whereClause}";
+        var query = $"SELECT META().id AS {{ entity.id_property_name_camel_case }}, e.* FROM `{BucketName}`.`{ScopeName}`.`{CollectionName}` e {whereClause}";
 
         var queryOptions = new QueryOptions();
         foreach (var param in filter.Parameters)
@@ -91,18 +97,20 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
     public async Task<PagedResult<{{ entity.name }}>> GetPageAsync(int pageIndex, int pageSize, CancellationToken cancellationToken = default)
     {
         var bucket = await _bucketProvider.GetBucketAsync(BucketName);
-        var scope = await bucket.DefaultScopeAsync();
+        var scope = bucket.Scope(ScopeName);
 
         // Build filter with pagination (fetch one extra to detect next page)
         var filter = new FilterBuilder<{{ entity.name }}>();
+{{~ if entity.use_type_discriminator ~}}
         filter.Where("type", DocumentType);
+{{~ end ~}}
         filter.OrderBy("{{ entity.id_property_name_camel_case }}", descending: false);
 
         var offset = pageIndex * pageSize;
         filter.Skip(offset).Take(pageSize + 1);
 
         var whereClause = filter.Build();
-        var query = $"SELECT META().id AS {{ entity.id_property_name_camel_case }}, e.* FROM `{BucketName}`.`_default`.`_default` e {whereClause}";
+        var query = $"SELECT META().id AS {{ entity.id_property_name_camel_case }}, e.* FROM `{BucketName}`.`{ScopeName}`.`{CollectionName}` e {whereClause}";
 
         var queryOptions = new QueryOptions();
         foreach (var param in filter.Parameters)
@@ -139,10 +147,12 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
         // Use the ID as the document key (Meta.id())
         var key = entity.{{ entity.id_property_name }};
 
-        // Store with type field for querying
+        // Store document
         var document = new Dictionary<string, object?>
         {
+{{~ if entity.use_type_discriminator ~}}
             ["type"] = DocumentType,
+{{~ end ~}}
 {{~ for property in entity.non_id_properties ~}}
             ["{{ property.name_camel_case }}"] = entity.{{ property.name }},
 {{~ end ~}}
@@ -163,7 +173,9 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
         {
             var document = new Dictionary<string, object?>
             {
+{{~ if entity.use_type_discriminator ~}}
                 ["type"] = DocumentType,
+{{~ end ~}}
 {{~ for property in entity.non_id_properties ~}}
                 ["{{ property.name_camel_case }}"] = entity.{{ property.name }},
 {{~ end ~}}
