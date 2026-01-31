@@ -1,13 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace {{ namespace }}.Services;
+namespace {{ namespace }}.Models;
 
 /// <summary>
 /// Request model for creating a {{ entity.display_name }}.
 /// </summary>
 public class Create{{ entity.name }}Request
 {
-{{~ for property in entity.properties ~}}
+{{~ for property in entity.non_id_properties ~}}
 {{~ if property.is_required ~}}
     [Required]
 {{~ end ~}}
@@ -26,7 +26,7 @@ public class Create{{ entity.name }}Request
 /// </summary>
 public class Update{{ entity.name }}Request
 {
-{{~ for property in entity.properties ~}}
+{{~ for property in entity.non_id_properties ~}}
 {{~ if property.is_required ~}}
     [Required]
 {{~ end ~}}

@@ -73,7 +73,58 @@ public class SchemaParser : ISchemaParser
             entity.Properties.Add(property);
         }
 
+        // Detect or add ID property
+        EnsureIdProperty(entity);
+
         return entity;
+    }
+
+    private void EnsureIdProperty(EntityDefinition entity)
+    {
+        // Check for {entityName}Id (e.g., "ProductId" for "Product")
+        var entityIdName = $"{entity.Name}Id";
+        var entityIdProp = entity.Properties.FirstOrDefault(p =>
+            string.Equals(p.Name, entityIdName, StringComparison.OrdinalIgnoreCase));
+
+        if (entityIdProp != null)
+        {
+            entityIdProp.IsId = true;
+            // Ensure ID is string type for Couchbase Meta.id() compatibility
+            entityIdProp.CSharpType = "string";
+            entityIdProp.TypeScriptType = "string";
+            _logger.LogDebug("Using {PropertyName} as ID property for entity {EntityName}", entityIdProp.Name, entity.Name);
+            return;
+        }
+
+        // Check for "Id" property
+        var idProp = entity.Properties.FirstOrDefault(p =>
+            string.Equals(p.Name, "Id", StringComparison.OrdinalIgnoreCase));
+
+        if (idProp != null)
+        {
+            idProp.IsId = true;
+            // Ensure ID is string type for Couchbase Meta.id() compatibility
+            idProp.CSharpType = "string";
+            idProp.TypeScriptType = "string";
+            _logger.LogDebug("Using {PropertyName} as ID property for entity {EntityName}", idProp.Name, entity.Name);
+            return;
+        }
+
+        // No ID property found, add one
+        var newIdProp = new PropertyDefinition
+        {
+            Name = "Id",
+            NameCamelCase = "id",
+            CSharpType = "string",
+            TypeScriptType = "string",
+            IsNullable = false,
+            IsCollection = false,
+            IsId = true
+        };
+
+        // Insert at the beginning of properties
+        entity.Properties.Insert(0, newIdProp);
+        _logger.LogInformation("Added Id property to entity {EntityName} (maps to Couchbase Meta.id())", entity.Name);
     }
 
     private PropertyDefinition ParseProperty(string propertyName, JsonElement element)

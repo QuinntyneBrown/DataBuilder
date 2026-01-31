@@ -73,7 +73,6 @@ db model-add --json-file product.json
 ```json
 {
     "product": {
-        "id": 0,
         "name": "",
         "price": 0.0,
         "isActive": true
@@ -82,6 +81,41 @@ db model-add --json-file product.json
 ```
 
 This generates a `Product` entity with full CRUD operations on both backend and frontend.
+
+### ID Field Handling
+
+The ID field maps directly to Couchbase's `Meta.id()` (the document key). DataBuilder handles ID fields as follows:
+
+1. **`{entityName}Id` property** (e.g., `productId` for `Product`): Used as the ID field
+2. **`id` property**: Used as the ID field
+3. **No ID specified**: An `Id` property is automatically added
+
+```json
+// Option 1: Explicit entity ID
+{
+    "product": {
+        "productId": "",
+        "name": ""
+    }
+}
+
+// Option 2: Generic ID
+{
+    "product": {
+        "id": "",
+        "name": ""
+    }
+}
+
+// Option 3: Auto-generated (Id property added automatically)
+{
+    "product": {
+        "name": ""
+    }
+}
+```
+
+The ID is always stored as a string and used directly as the Couchbase document key.
 
 ## Project Structure
 

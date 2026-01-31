@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace {{ namespace }}.Models;
 
 /// <summary>
@@ -5,21 +7,24 @@ namespace {{ namespace }}.Models;
 /// </summary>
 public class {{ entity.name }}
 {
-    /// <summary>
-    /// Gets or sets the unique identifier.
-    /// </summary>
-    public Guid {{ entity.name }}Id { get; set; } = Guid.NewGuid();
 {{~ for property in entity.properties ~}}
-
     /// <summary>
+{{~ if property.is_id ~}}
+    /// Gets or sets the unique identifier (maps to Couchbase Meta.id()).
+{{~ else ~}}
     /// Gets or sets the {{ property.name_camel_case }}.
+{{~ end ~}}
     /// </summary>
-{{~ if property.c_sharp_type == "string" ~}}
+{{~ if property.is_id ~}}
+    [JsonPropertyName("{{ property.name_camel_case }}")]
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = string.Empty;
+{{~ else if property.c_sharp_type == "string" ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = string.Empty;
 {{~ else if property.is_collection ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
 {{~ else ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; }
 {{~ end ~}}
+
 {{~ end ~}}
 }

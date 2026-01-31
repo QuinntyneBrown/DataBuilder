@@ -40,7 +40,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
             </div>
           } @else {
             <form [formGroup]="form" (ngSubmit)="save()">
-{{~ for property in entity.properties ~}}
+{{~ for property in entity.non_id_properties ~}}
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>{{ property.name }}</mat-label>
 {{~ if property.type_script_type == "number" ~}}
@@ -109,7 +109,7 @@ export class {{ entity.name }}DetailComponent implements OnInit {
   readonly isNew = signal(true);
 
   form: FormGroup = this.fb.group({
-{{~ for property in entity.properties ~}}
+{{~ for property in entity.non_id_properties ~}}
 {{~ if property.is_required ~}}
     {{ property.name_camel_case }}: ['', Validators.required],
 {{~ else ~}}
@@ -134,7 +134,7 @@ export class {{ entity.name }}DetailComponent implements OnInit {
     this.{{ entity.name_camel_case }}Service.getById(id).subscribe({
       next: (item) => {
         this.form.patchValue({
-{{~ for property in entity.properties ~}}
+{{~ for property in entity.non_id_properties ~}}
           {{ property.name_camel_case }}: item.{{ property.name_camel_case }},
 {{~ end ~}}
         });

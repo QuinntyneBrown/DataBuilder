@@ -25,7 +25,7 @@ public class ApiGenerator : IApiGenerator
         var assembly = Assembly.GetExecutingAssembly();
         var templateNames = new[]
         {
-            "Entity", "Controller", "Repository", "PagedResult",
+            "Entity", "Controller", "Repository", "Request", "PagedResult",
             "ServiceCollectionExtensions", "Program", "appsettings",
             "csproj", "Core.csproj", "Infrastructure.csproj"
         };
@@ -93,6 +93,9 @@ public class ApiGenerator : IApiGenerator
             };
 
             await GenerateFileAsync("Entity", Path.Combine(modelsDir, $"{entity.Name}.cs"),
+                entityModel, cancellationToken);
+
+            await GenerateFileAsync("Request", Path.Combine(modelsDir, $"{entity.Name}Requests.cs"),
                 entityModel, cancellationToken);
         }
     }

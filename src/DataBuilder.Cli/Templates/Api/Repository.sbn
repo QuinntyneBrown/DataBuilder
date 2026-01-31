@@ -11,12 +11,12 @@ namespace {{ namespace }}.Data;
 /// </summary>
 public interface I{{ entity.name }}Repository
 {
-    Task<{{ entity.name }}?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<{{ entity.name }}?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
     Task<IEnumerable<{{ entity.name }}>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<PagedResult<{{ entity.name }}>> GetPageAsync(int pageIndex, int pageSize, CancellationToken cancellationToken = default);
     Task<{{ entity.name }}> CreateAsync({{ entity.name }} entity, CancellationToken cancellationToken = default);
     Task<{{ entity.name }}?> UpdateAsync({{ entity.name }} entity, CancellationToken cancellationToken = default);
-    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -27,7 +27,8 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
     private readonly IBucketProvider _bucketProvider;
     private readonly ILogger<{{ entity.name }}Repository> _logger;
     private const string BucketName = "{{ bucket_name }}";
-    private const string DocumentKeyPrefix = "{{ entity.name_camel_case }}::";
+    private const string CollectionName = "{{ entity.name_camel_case }}";
+    private const string DocumentType = "{{ entity.name_camel_case }}";
 
     public {{ entity.name }}Repository(
         IBucketProvider bucketProvider,
@@ -43,15 +44,19 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
         return await bucket.DefaultCollectionAsync();
     }
 
-    public async Task<{{ entity.name }}?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<{{ entity.name }}?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         var collection = await GetCollectionAsync();
-        var key = $"{DocumentKeyPrefix}{id}";
 
         try
         {
-            var result = await collection.GetAsync(key);
-            return result.ContentAs<{{ entity.name }}>();
+            var result = await collection.GetAsync(id);
+            var entity = result.ContentAs<{{ entity.name }}>();
+            if (entity != null)
+            {
+                entity.{{ entity.id_property_name }} = id;
+            }
+            return entity;
         }
         catch (Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException)
         {
@@ -64,7 +69,7 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
         var bucket = await _bucketProvider.GetBucketAsync(BucketName);
         var cluster = bucket.Cluster;
 
-        var query = $"SELECT META().id, d.* FROM `{BucketName}` AS d WHERE META().id LIKE '{DocumentKeyPrefix}%'";
+        var query = $"SELECT META().id AS {{ entity.id_property_name_camel_case }}, d.* FROM `{BucketName}` AS d WHERE d.type = '{DocumentType}'";
         var result = await cluster.QueryAsync<{{ entity.name }}>(query);
 
         var items = new List<{{ entity.name }}>();
@@ -82,14 +87,14 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
         var cluster = bucket.Cluster;
 
         // Get total count
-        var countQuery = $"SELECT COUNT(*) as count FROM `{BucketName}` WHERE META().id LIKE '{DocumentKeyPrefix}%'";
+        var countQuery = $"SELECT COUNT(*) as count FROM `{BucketName}` WHERE type = '{DocumentType}'";
         var countResult = await cluster.QueryAsync<dynamic>(countQuery);
         var countRow = await countResult.Rows.FirstOrDefaultAsync(cancellationToken);
         var totalCount = countRow?.count ?? 0;
 
         // Get paged data
         var offset = pageIndex * pageSize;
-        var dataQuery = $"SELECT META().id, d.* FROM `{BucketName}` AS d WHERE META().id LIKE '{DocumentKeyPrefix}%' LIMIT {pageSize} OFFSET {offset}";
+        var dataQuery = $"SELECT META().id AS {{ entity.id_property_name_camel_case }}, d.* FROM `{BucketName}` AS d WHERE d.type = '{DocumentType}' LIMIT {pageSize} OFFSET {offset}";
         var dataResult = await cluster.QueryAsync<{{ entity.name }}>(dataQuery);
 
         var items = new List<{{ entity.name }}>();
@@ -112,27 +117,47 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
     {
         var collection = await GetCollectionAsync();
 
-        if (entity.{{ entity.name }}Id == Guid.Empty)
+        // Generate ID if not provided
+        if (string.IsNullOrEmpty(entity.{{ entity.id_property_name }}))
         {
-            entity.{{ entity.name }}Id = Guid.NewGuid();
+            entity.{{ entity.id_property_name }} = Guid.NewGuid().ToString();
         }
 
-        var key = $"{DocumentKeyPrefix}{entity.{{ entity.name }}Id}";
-        await collection.InsertAsync(key, entity);
+        // Use the ID as the document key (Meta.id())
+        var key = entity.{{ entity.id_property_name }};
 
-        _logger.LogInformation("Created {{ entity.name }} with ID: {Id}", entity.{{ entity.name }}Id);
+        // Store with type field for querying
+        var document = new Dictionary<string, object?>
+        {
+            ["type"] = DocumentType,
+{{~ for property in entity.non_id_properties ~}}
+            ["{{ property.name_camel_case }}"] = entity.{{ property.name }},
+{{~ end ~}}
+        };
+
+        await collection.InsertAsync(key, document);
+
+        _logger.LogInformation("Created {{ entity.name }} with ID: {Id}", entity.{{ entity.id_property_name }});
         return entity;
     }
 
     public async Task<{{ entity.name }}?> UpdateAsync({{ entity.name }} entity, CancellationToken cancellationToken = default)
     {
         var collection = await GetCollectionAsync();
-        var key = $"{DocumentKeyPrefix}{entity.{{ entity.name }}Id}";
+        var key = entity.{{ entity.id_property_name }};
 
         try
         {
-            await collection.ReplaceAsync(key, entity);
-            _logger.LogInformation("Updated {{ entity.name }} with ID: {Id}", entity.{{ entity.name }}Id);
+            var document = new Dictionary<string, object?>
+            {
+                ["type"] = DocumentType,
+{{~ for property in entity.non_id_properties ~}}
+                ["{{ property.name_camel_case }}"] = entity.{{ property.name }},
+{{~ end ~}}
+            };
+
+            await collection.ReplaceAsync(key, document);
+            _logger.LogInformation("Updated {{ entity.name }} with ID: {Id}", entity.{{ entity.id_property_name }});
             return entity;
         }
         catch (Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException)
@@ -141,14 +166,13 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
         var collection = await GetCollectionAsync();
-        var key = $"{DocumentKeyPrefix}{id}";
 
         try
         {
-            await collection.RemoveAsync(key);
+            await collection.RemoveAsync(id);
             _logger.LogInformation("Deleted {{ entity.name }} with ID: {Id}", id);
             return true;
         }

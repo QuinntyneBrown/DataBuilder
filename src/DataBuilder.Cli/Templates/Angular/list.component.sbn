@@ -51,7 +51,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef>Actions</th>
                 <td mat-cell *matCellDef="let item">
-                  <button mat-icon-button color="primary" [routerLink]="[item.{{ entity.name_camel_case }}Id]">
+                  <button mat-icon-button color="primary" [routerLink]="[item.{{ entity.id_property_name_camel_case }}]">
                     <mat-icon>edit</mat-icon>
                   </button>
                   <button mat-icon-button color="warn" (click)="delete(item)">
@@ -120,7 +120,7 @@ export class {{ entity.name }}ListComponent implements OnInit {
 
   delete(item: {{ entity.name }}): void {
     if (confirm('Are you sure you want to delete this {{ entity.display_name | string.downcase }}?')) {
-      this.{{ entity.name_camel_case }}Service.delete(item.{{ entity.name_camel_case }}Id).subscribe({
+      this.{{ entity.name_camel_case }}Service.delete(item.{{ entity.id_property_name_camel_case }}).subscribe({
         next: () => {
           this.snackBar.open('{{ entity.display_name }} deleted', 'Close', { duration: 3000 });
           this.loadItems();

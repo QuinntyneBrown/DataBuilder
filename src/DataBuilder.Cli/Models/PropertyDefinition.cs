@@ -41,6 +41,11 @@ public class PropertyDefinition
     public bool IsCollection { get; set; }
 
     /// <summary>
+    /// Whether this property is the entity's ID field (maps to Couchbase Meta.id()).
+    /// </summary>
+    public bool IsId { get; set; }
+
+    /// <summary>
     /// The original JSON sample value (for documentation purposes).
     /// </summary>
     public string? SampleValue { get; set; }
