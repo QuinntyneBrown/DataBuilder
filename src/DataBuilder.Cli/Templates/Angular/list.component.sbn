@@ -7,8 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { {{ entity.name }} } from '../../models/{{ entity.name_kebab_case }}.model';
-import { {{ entity.name }}Service } from '../../services/{{ entity.name_kebab_case }}.service';
+import { {{ entity.name }} } from '../../../models/{{ entity.name_kebab_case }}.model';
+import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab_case }}.service';
 
 @Component({
   selector: 'app-{{ entity.name_kebab_case }}-list',

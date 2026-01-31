@@ -7,8 +7,6 @@ $dark-theme: mat.define-theme((
     primary: mat.$violet-palette,
     tertiary: mat.$cyan-palette,
   ),
-  typography: Roboto,
-  density: 0,
 ));
 
 html {

@@ -88,6 +88,46 @@ public class AngularGenerator : IAngularGenerator
             // Create directory structure manually if ng CLI fails
             await CreateManualAngularStructureAsync(options, cancellationToken);
         }
+        else
+        {
+            // Ensure @angular/animations is in package.json (ng new may not include it)
+            await EnsureAnimationsPackageAsync(options, cancellationToken);
+        }
+    }
+
+    private async Task EnsureAnimationsPackageAsync(SolutionOptions options, CancellationToken cancellationToken)
+    {
+        var packageJsonPath = Path.Combine(options.UiProjectDirectory, "package.json");
+        if (!File.Exists(packageJsonPath))
+            return;
+
+        var content = await File.ReadAllTextAsync(packageJsonPath, cancellationToken);
+
+        // Check if @angular/animations is already present
+        if (content.Contains("@angular/animations"))
+            return;
+
+        _logger.LogInformation("Adding @angular/animations to package.json...");
+
+        // Find the dependencies section and add @angular/animations
+        // Look for "@angular/common" and add animations before it
+        var commonPattern = "\"@angular/common\"";
+        var commonIndex = content.IndexOf(commonPattern);
+        if (commonIndex > 0)
+        {
+            // Extract the version pattern from @angular/common
+            var versionStart = content.IndexOf(':', commonIndex) + 1;
+            var versionEnd = content.IndexOf(',', versionStart);
+            if (versionEnd < 0) versionEnd = content.IndexOf('}', versionStart);
+            var version = content.Substring(versionStart, versionEnd - versionStart).Trim().Trim('"');
+
+            // Insert @angular/animations before @angular/common
+            var insertText = $"\"@angular/animations\": \"{version}\",\n    ";
+            content = content.Insert(commonIndex, insertText);
+
+            await File.WriteAllTextAsync(packageJsonPath, content, cancellationToken);
+            _logger.LogDebug("Added @angular/animations to package.json");
+        }
     }
 
     private async Task CreateManualAngularStructureAsync(SolutionOptions options, CancellationToken cancellationToken)
