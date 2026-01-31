@@ -136,6 +136,7 @@ public class SchemaParser : ISchemaParser
 
         var isNullable = element.ValueKind == JsonValueKind.Null;
         var isCollection = csharpType.StartsWith("List<") || csharpType.EndsWith("[]");
+        var isObject = element.ValueKind == JsonValueKind.Object;
 
         string? sampleValue = element.ValueKind switch
         {
@@ -143,6 +144,7 @@ public class SchemaParser : ISchemaParser
             JsonValueKind.Number => element.GetRawText(),
             JsonValueKind.True => "true",
             JsonValueKind.False => "false",
+            JsonValueKind.Object => element.GetRawText(),
             _ => null
         };
 
@@ -154,6 +156,7 @@ public class SchemaParser : ISchemaParser
             TypeScriptType = tsType,
             IsNullable = isNullable,
             IsCollection = isCollection,
+            IsObject = isObject,
             SampleValue = sampleValue
         };
     }

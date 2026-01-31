@@ -103,4 +103,46 @@ public class EntityDefinition
     /// </summary>
     public bool HasDescriptionProperty => Properties.Any(p =>
         p.Name.Equals("Description", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Material icon name for this entity in the UI navigation.
+    /// </summary>
+    public string Icon => GetDefaultIcon();
+
+    private string GetDefaultIcon()
+    {
+        var nameLower = Name.ToLowerInvariant();
+
+        return nameLower switch
+        {
+            "user" or "users" => "person",
+            "account" or "accounts" => "account_circle",
+            "category" or "categories" => "category",
+            "product" or "products" => "inventory_2",
+            "order" or "orders" => "shopping_cart",
+            "idea" or "ideas" => "lightbulb",
+            "task" or "tasks" => "task_alt",
+            "project" or "projects" => "folder",
+            "document" or "documents" => "description",
+            "setting" or "settings" => "settings",
+            "role" or "roles" => "admin_panel_settings",
+            "permission" or "permissions" => "security",
+            "notification" or "notifications" => "notifications",
+            "message" or "messages" => "message",
+            "comment" or "comments" => "comment",
+            "report" or "reports" => "assessment",
+            "dashboard" => "dashboard",
+            "log" or "logs" => "history",
+            "file" or "files" => "attach_file",
+            "image" or "images" => "image",
+            "video" or "videos" => "videocam",
+            "event" or "events" => "event",
+            "calendar" => "calendar_today",
+            "contact" or "contacts" => "contacts",
+            "customer" or "customers" => "people",
+            "employee" or "employees" => "badge",
+            "team" or "teams" => "groups",
+            _ => "list"
+        };
+    }
 }

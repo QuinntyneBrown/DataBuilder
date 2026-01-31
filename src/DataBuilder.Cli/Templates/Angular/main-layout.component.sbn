@@ -1,0 +1,203 @@
+import { Component, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatListModule } from '@angular/material/list';
+import { MatTooltipModule } from '@angular/material/tooltip';
+
+@Component({
+  selector: 'app-main-layout',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    MatToolbarModule,
+    MatButtonModule,
+    MatIconModule,
+    MatSidenavModule,
+    MatListModule,
+    MatTooltipModule
+  ],
+  template: `
+    <div class="app-container">
+      <!-- Toolbar -->
+      <mat-toolbar class="main-toolbar">
+        <button mat-icon-button (click)="toggleSidenav()" matTooltip="Toggle menu">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <span class="toolbar-title">{{ solution_name }}</span>
+        <span class="toolbar-spacer"></span>
+        <button mat-icon-button matTooltip="Notifications">
+          <mat-icon>notifications_none</mat-icon>
+        </button>
+        <button mat-icon-button matTooltip="Help">
+          <mat-icon>help_outline</mat-icon>
+        </button>
+        <button mat-icon-button matTooltip="Account">
+          <mat-icon>account_circle</mat-icon>
+        </button>
+      </mat-toolbar>
+
+      <!-- Layout Container -->
+      <div class="layout-container">
+        <!-- Sidenav -->
+        <mat-sidenav-container class="sidenav-container">
+          <mat-sidenav #sidenav mode="side" [opened]="sidenavOpen()" class="main-sidenav">
+            <mat-nav-list>
+{{~ for entity in entities ~}}
+              <a mat-list-item routerLink="/{{ entity.name_plural_kebab_case }}" routerLinkActive="active-link">
+                <mat-icon matListItemIcon>{{ entity.icon ?? "list" }}</mat-icon>
+                <span matListItemTitle>{{ entity.display_name_plural }}</span>
+              </a>
+{{~ end ~}}
+            </mat-nav-list>
+          </mat-sidenav>
+
+          <mat-sidenav-content class="main-content">
+            <router-outlet></router-outlet>
+          </mat-sidenav-content>
+        </mat-sidenav-container>
+      </div>
+    </div>
+  `,
+  styles: [`
+    /* ============================================
+       CSS VARIABLES (Admin UI Design System)
+       ============================================ */
+    :host {
+      --primary-500: #2196f3;
+      --primary-600: #1e88e5;
+      --primary-700: #1976d2;
+      --accent-500: #ff9800;
+      --warn-500: #f44336;
+
+      --surface-background: #121212;
+      --surface-card: #1e1e1e;
+      --surface-elevated: #2d2d2d;
+      --surface-divider: rgba(255, 255, 255, 0.12);
+      --surface-hover: rgba(255, 255, 255, 0.08);
+      --surface-selected: rgba(33, 150, 243, 0.16);
+
+      --text-primary: rgba(255, 255, 255, 0.87);
+      --text-secondary: rgba(255, 255, 255, 0.60);
+      --text-disabled: rgba(255, 255, 255, 0.38);
+
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --spacing-xl: 32px;
+
+      --elevation-4: 0 10px 20px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.10);
+
+      display: block;
+      height: 100%;
+    }
+
+    /* ============================================
+       APP SHELL
+       ============================================ */
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background-color: var(--surface-background);
+    }
+
+    /* ============================================
+       TOOLBAR
+       ============================================ */
+    .main-toolbar {
+      height: 64px;
+      background-color: var(--surface-card);
+      color: var(--text-primary);
+      box-shadow: var(--elevation-4);
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+
+    .toolbar-title {
+      font-size: 20px;
+      font-weight: 500;
+      margin-left: var(--spacing-md);
+    }
+
+    .toolbar-spacer {
+      flex: 1;
+    }
+
+    /* ============================================
+       LAYOUT CONTAINER
+       ============================================ */
+    .layout-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .sidenav-container {
+      flex: 1;
+      background-color: var(--surface-background);
+    }
+
+    /* ============================================
+       SIDENAV
+       ============================================ */
+    .main-sidenav {
+      width: 256px;
+      background-color: var(--surface-card);
+      border-right: 1px solid var(--surface-divider);
+    }
+
+    .main-sidenav ::ng-deep .mat-mdc-nav-list {
+      padding-top: var(--spacing-sm);
+    }
+
+    .main-sidenav ::ng-deep .mat-mdc-list-item {
+      color: var(--text-primary);
+      margin: 0 var(--spacing-sm);
+      border-radius: 4px;
+    }
+
+    .main-sidenav ::ng-deep .mat-mdc-list-item:hover {
+      background-color: var(--surface-hover);
+    }
+
+    .main-sidenav ::ng-deep .mat-mdc-list-item .mat-icon {
+      color: var(--text-secondary);
+      margin-right: var(--spacing-md);
+    }
+
+    .main-sidenav ::ng-deep .active-link {
+      background-color: var(--surface-selected);
+    }
+
+    .main-sidenav ::ng-deep .active-link .mat-icon {
+      color: var(--primary-500);
+    }
+
+    .main-sidenav ::ng-deep .active-link .mdc-list-item__primary-text {
+      color: var(--primary-500);
+    }
+
+    /* ============================================
+       MAIN CONTENT
+       ============================================ */
+    .main-content {
+      background-color: var(--surface-background);
+      overflow-y: auto;
+    }
+  `]
+})
+export class MainLayoutComponent {
+  readonly sidenavOpen = signal(true);
+
+  toggleSidenav(): void {
+    this.sidenavOpen.update(open => !open);
+  }
+}

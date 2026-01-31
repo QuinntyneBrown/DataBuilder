@@ -6,6 +6,14 @@
     "status": "Draft",
     "priority": 1,
     "createdAt": "2024-01-15T10:30:00Z",
-    "isPublic": false
+    "isPublic": false,
+    "customMetadata": {
+      "estimatedCompletionDate": "2024-12-31"
+    }
+  },
+  "category": {
+    "id":"",
+    "name": "Innovation",
+    "description": "Ideas that bring new and creative solutions."
   }
 }

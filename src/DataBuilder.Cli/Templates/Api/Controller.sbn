@@ -92,10 +92,8 @@ public class {{ entity.name_plural }}Controller : ControllerBase
     {
         _logger.LogInformation("Updating {{ entity.name }} with ID: {Id}", id);
 
-        if (id != entity.{{ entity.id_property_name }})
-        {
-            return BadRequest("ID mismatch");
-        }
+        // Set ID from URL path (frontend may not include it in body)
+        entity.{{ entity.id_property_name }} = id;
 
         var item = await _repository.UpdateAsync(entity, cancellationToken);
 

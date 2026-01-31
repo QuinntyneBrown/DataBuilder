@@ -1,28 +1,30 @@
 import { Routes } from '@angular/router';
+import { MainLayoutComponent } from './layouts/main-layout/main-layout.component';
 
 export const routes: Routes = [
-{{~ for entity in entities ~}}
   {
-    path: '{{ entity.name_plural_kebab_case }}',
+    path: '',
+    component: MainLayoutComponent,
     children: [
+{{~ for entity in entities ~}}
       {
-        path: '',
+        path: '{{ entity.name_plural_kebab_case }}',
         loadComponent: () => import('./features/{{ entity.name_kebab_case }}/{{ entity.name_kebab_case }}-list/{{ entity.name_kebab_case }}-list.component')
           .then(m => m.{{ entity.name }}ListComponent)
       },
       {
-        path: 'new',
+        path: '{{ entity.name_plural_kebab_case }}/new',
         loadComponent: () => import('./features/{{ entity.name_kebab_case }}/{{ entity.name_kebab_case }}-detail/{{ entity.name_kebab_case }}-detail.component')
           .then(m => m.{{ entity.name }}DetailComponent)
       },
       {
-        path: ':id',
+        path: '{{ entity.name_plural_kebab_case }}/:id',
         loadComponent: () => import('./features/{{ entity.name_kebab_case }}/{{ entity.name_kebab_case }}-detail/{{ entity.name_kebab_case }}-detail.component')
           .then(m => m.{{ entity.name }}DetailComponent)
-      }
+      },
+{{~ end ~}}
+      { path: '', redirectTo: '{{ entities[0].name_plural_kebab_case }}', pathMatch: 'full' }
     ]
   },
-{{~ end ~}}
-  { path: '', redirectTo: '{{ entities[0].name_plural_kebab_case }}', pathMatch: 'full' },
-  { path: '**', redirectTo: '{{ entities[0].name_plural_kebab_case }}' }
+  { path: '**', redirectTo: '' }
 ];

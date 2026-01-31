@@ -51,21 +51,14 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
         </button>
       </div>
 
-      <!-- Stats Cards -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-card__value">{{ '{{' }} items().length {{ '}}' }}</div>
-          <div class="stat-card__label">Total {{ entity.display_name_plural }}</div>
-        </div>
-      </div>
-
       <!-- Filter Bar -->
-      <div class="filter-bar">
+      <mat-card class="filter-bar">
         <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search</mat-label>
           <mat-icon matPrefix>search</mat-icon>
           <input matInput placeholder="Search {{ entity.display_name_plural | string.downcase }}..." [(ngModel)]="searchTerm" (input)="applyFilter()">
         </mat-form-field>
-      </div>
+      </mat-card>
 
       <!-- Data Table Card -->
       <mat-card class="table-card">
@@ -182,39 +175,12 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
       font-weight: 500;
     }
 
-    /* Stats Grid */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .stat-card {
-      background-color: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      padding: 24px;
-    }
-
-    .stat-card__value {
-      font-size: 32px;
-      font-weight: 300;
-      color: rgba(255, 255, 255, 0.87);
-      margin-bottom: 4px;
-    }
-
-    .stat-card__label {
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.6);
-    }
-
     /* Filter Bar */
     .filter-bar {
       display: flex;
       gap: 16px;
       margin-bottom: 24px;
       padding: 16px;
-      background-color: rgba(255, 255, 255, 0.05);
       border-radius: 8px;
     }
 

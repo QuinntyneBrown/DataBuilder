@@ -980,7 +980,10 @@ The List View is the entry point for managing entities. It displays records in a
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Stats Cards:**
+**Stats Cards (Optional):**
+
+Stats Cards are an optional component for list views. Include them when displaying key aggregate metrics adds value to the user experience (e.g., showing counts of total, active, inactive records). Omit them when the metrics are not meaningful or would add unnecessary clutter.
+
 ```css
 .stats-grid {
   display: grid;

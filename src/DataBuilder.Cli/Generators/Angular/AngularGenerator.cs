@@ -29,7 +29,8 @@ public class AngularGenerator : IAngularGenerator
         var templateNames = new[]
         {
             "model-ts", "service-ts", "list.component", "detail.component",
-            "styles.scss", "index.html", "app.routes", "app.component", "app.config"
+            "styles.scss", "index.html", "app.routes", "app.component", "app.config",
+            "main-layout.component"
         };
 
         foreach (var name in templateNames)
@@ -92,6 +93,10 @@ public class AngularGenerator : IAngularGenerator
         {
             // Ensure @angular/animations is in package.json (ng new may not include it)
             await EnsureAnimationsPackageAsync(options, cancellationToken);
+            // Ensure zone.js is in package.json
+            await EnsureZoneJsPackageAsync(options, cancellationToken);
+            // Ensure zone.js is imported in main.ts
+            await EnsureZoneJsImportAsync(options, cancellationToken);
         }
     }
 
@@ -128,6 +133,61 @@ public class AngularGenerator : IAngularGenerator
             await File.WriteAllTextAsync(packageJsonPath, content, cancellationToken);
             _logger.LogDebug("Added @angular/animations to package.json");
         }
+    }
+
+    private async Task EnsureZoneJsPackageAsync(SolutionOptions options, CancellationToken cancellationToken)
+    {
+        var packageJsonPath = Path.Combine(options.UiProjectDirectory, "package.json");
+        if (!File.Exists(packageJsonPath))
+            return;
+
+        var content = await File.ReadAllTextAsync(packageJsonPath, cancellationToken);
+
+        // Check if zone.js is already present
+        if (content.Contains("\"zone.js\""))
+            return;
+
+        _logger.LogInformation("Adding zone.js to package.json...");
+
+        // Find the dependencies section and add zone.js
+        // Look for "tslib" and add zone.js after it
+        var tslibPattern = "\"tslib\"";
+        var tslibIndex = content.IndexOf(tslibPattern);
+        if (tslibIndex > 0)
+        {
+            // Find the end of the tslib line
+            var lineEnd = content.IndexOf('\n', tslibIndex);
+            if (lineEnd > 0)
+            {
+                // Insert zone.js after tslib
+                var insertText = ",\n    \"zone.js\": \"~0.15.0\"";
+                content = content.Insert(lineEnd, insertText);
+
+                await File.WriteAllTextAsync(packageJsonPath, content, cancellationToken);
+                _logger.LogDebug("Added zone.js to package.json");
+            }
+        }
+    }
+
+    private async Task EnsureZoneJsImportAsync(SolutionOptions options, CancellationToken cancellationToken)
+    {
+        var mainTsPath = Path.Combine(options.UiProjectDirectory, "src", "main.ts");
+        if (!File.Exists(mainTsPath))
+            return;
+
+        var content = await File.ReadAllTextAsync(mainTsPath, cancellationToken);
+
+        // Check if zone.js is already imported
+        if (content.Contains("import 'zone.js'") || content.Contains("import \"zone.js\""))
+            return;
+
+        _logger.LogInformation("Adding zone.js import to main.ts...");
+
+        // Add zone.js import at the beginning of the file
+        content = "import 'zone.js';\n" + content;
+
+        await File.WriteAllTextAsync(mainTsPath, content, cancellationToken);
+        _logger.LogDebug("Added zone.js import to main.ts");
     }
 
     private async Task CreateManualAngularStructureAsync(SolutionOptions options, CancellationToken cancellationToken)
@@ -261,11 +321,12 @@ public class AngularGenerator : IAngularGenerator
         await File.WriteAllTextAsync(Path.Combine(projectDir, "tsconfig.app.json"), tsConfigApp, cancellationToken);
 
         // Create main.ts
-        var mainTs = @"import { bootstrapApplication } from '@angular/platform-browser';
+        var mainTs = @"import 'zone.js';
+import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
-import { AppComponent } from './app/app.component';
+import { App } from './app/app';
 
-bootstrapApplication(AppComponent, appConfig)
+bootstrapApplication(App, appConfig)
   .catch((err) => console.error(err));
 ";
         await File.WriteAllTextAsync(Path.Combine(srcDir, "main.ts"), mainTs, cancellationToken);
@@ -295,6 +356,7 @@ bootstrapApplication(AppComponent, appConfig)
         // Ensure directories exist
         Directory.CreateDirectory(Path.Combine(appDir, "models"));
         Directory.CreateDirectory(Path.Combine(appDir, "services"));
+        Directory.CreateDirectory(Path.Combine(appDir, "layouts", "main-layout"));
 
         // Generate styles.scss
         await GenerateFileAsync("styles.scss", Path.Combine(srcDir, "styles.scss"),
@@ -303,6 +365,13 @@ bootstrapApplication(AppComponent, appConfig)
         // Generate index.html
         await GenerateFileAsync("index.html", Path.Combine(srcDir, "index.html"),
             new { SolutionName = options.NamePascalCase }, cancellationToken);
+
+        // Clean up default Angular CLI app template - replace with router-outlet only
+        var appHtmlPath = Path.Combine(appDir, "app.html");
+        if (File.Exists(appHtmlPath))
+        {
+            await File.WriteAllTextAsync(appHtmlPath, "<router-outlet />\n", cancellationToken);
+        }
 
         // Generate app.routes.ts
         await GenerateFileAsync("app.routes", Path.Combine(appDir, "app.routes.ts"),
@@ -315,6 +384,12 @@ bootstrapApplication(AppComponent, appConfig)
         // Generate app.config.ts
         await GenerateFileAsync("app.config", Path.Combine(appDir, "app.config.ts"),
             new { }, cancellationToken);
+
+        // Generate main-layout component
+        await GenerateFileAsync("main-layout.component",
+            Path.Combine(appDir, "layouts", "main-layout", "main-layout.component.ts"),
+            new { SolutionName = options.NamePascalCase, Entities = options.Entities },
+            cancellationToken);
 
         // Generate entity-specific files
         foreach (var entity in options.Entities)

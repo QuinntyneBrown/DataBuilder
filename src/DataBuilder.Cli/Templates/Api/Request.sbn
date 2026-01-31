@@ -15,6 +15,8 @@ public class Create{{ entity.name }}Request
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = string.Empty;
 {{~ else if property.is_collection ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
+{{~ else if property.is_object ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
 {{~ else ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; }
 {{~ end ~}}
@@ -33,6 +35,8 @@ public class Update{{ entity.name }}Request
 {{~ if property.c_sharp_type == "string" ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = string.Empty;
 {{~ else if property.is_collection ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
+{{~ else if property.is_object ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
 {{~ else ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; }

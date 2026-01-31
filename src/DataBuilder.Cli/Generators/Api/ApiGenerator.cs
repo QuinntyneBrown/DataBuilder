@@ -25,7 +25,7 @@ public class ApiGenerator : IApiGenerator
         var assembly = Assembly.GetExecutingAssembly();
         var templateNames = new[]
         {
-            "Entity", "Controller", "Repository", "Request", "PagedResult",
+            "Entity", "controller", "repository", "Request", "PagedResult",
             "ServiceCollectionExtensions", "Program", "appsettings",
             "csproj", "Core.csproj", "Infrastructure.csproj"
         };
@@ -128,7 +128,7 @@ public class ApiGenerator : IApiGenerator
                 BucketName = options.CouchbaseBucket
             };
 
-            await GenerateFileAsync("Repository", Path.Combine(dataDir, $"{entity.Name}Repository.cs"),
+            await GenerateFileAsync("repository", Path.Combine(dataDir, $"{entity.Name}Repository.cs"),
                 repoModel, cancellationToken);
         }
 
@@ -184,7 +184,7 @@ public class ApiGenerator : IApiGenerator
                 Entity = entity
             };
 
-            await GenerateFileAsync("Controller", Path.Combine(controllersDir, $"{entity.NamePlural}Controller.cs"),
+            await GenerateFileAsync("controller", Path.Combine(controllersDir, $"{entity.NamePlural}Controller.cs"),
                 controllerModel, cancellationToken);
         }
     }
@@ -250,7 +250,7 @@ public class ApiGenerator : IApiGenerator
             Entity = entity
         };
 
-        return await RenderTemplateAsync("Repository", repositoryModel, cancellationToken);
+        return await RenderTemplateAsync("repository", repositoryModel, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -264,7 +264,7 @@ public class ApiGenerator : IApiGenerator
             Entity = entity
         };
 
-        return await RenderTemplateAsync("Controller", controllerModel, cancellationToken);
+        return await RenderTemplateAsync("controller", controllerModel, cancellationToken);
     }
 
     private static string ConvertToSnakeCase(string name)

@@ -1,8 +1,11 @@
 using {{ core_namespace }}.Models;
+using Couchbase;
 using Couchbase.Extensions.DependencyInjection;
 using Couchbase.KeyValue;
+using Couchbase.Query;
 using Microsoft.Extensions.Logging;
-using Gateway.Core;
+using Gateway.Core.Extensions;
+using Gateway.Core.Filtering;
 
 namespace {{ namespace }}.Data;
 
@@ -67,49 +70,59 @@ public class {{ entity.name }}Repository : I{{ entity.name }}Repository
     public async Task<IEnumerable<{{ entity.name }}>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var bucket = await _bucketProvider.GetBucketAsync(BucketName);
-        var cluster = bucket.Cluster;
+        var scope = await bucket.DefaultScopeAsync();
 
-        var query = $"SELECT META().id AS {{ entity.id_property_name_camel_case }}, d.* FROM `{BucketName}` AS d WHERE d.type = '{DocumentType}'";
-        var result = await cluster.QueryAsync<{{ entity.name }}>(query);
+        var filter = new FilterBuilder<{{ entity.name }}>();
+        filter.Where("type", DocumentType);
+        filter.OrderBy("{{ entity.id_property_name_camel_case }}", descending: false);
 
-        var items = new List<{{ entity.name }}>();
-        await foreach (var item in result)
+        var whereClause = filter.Build();
+        var query = $"SELECT META().id AS {{ entity.id_property_name_camel_case }}, e.* FROM `{BucketName}`.`_default`.`_default` e {whereClause}";
+
+        var queryOptions = new QueryOptions();
+        foreach (var param in filter.Parameters)
         {
-            items.Add(item);
+            queryOptions.Parameter(param.Key, param.Value ?? DBNull.Value);
         }
 
-        return items;
+        return await scope.QueryToListAsync<{{ entity.name }}>(query, queryOptions);
     }
 
     public async Task<PagedResult<{{ entity.name }}>> GetPageAsync(int pageIndex, int pageSize, CancellationToken cancellationToken = default)
     {
         var bucket = await _bucketProvider.GetBucketAsync(BucketName);
-        var cluster = bucket.Cluster;
+        var scope = await bucket.DefaultScopeAsync();
 
-        // Get total count
-        var countQuery = $"SELECT COUNT(*) as count FROM `{BucketName}` WHERE type = '{DocumentType}'";
-        var countResult = await cluster.QueryAsync<dynamic>(countQuery);
-        var countRow = await countResult.Rows.FirstOrDefaultAsync(cancellationToken);
-        var totalCount = countRow?.count ?? 0;
+        // Build filter with pagination (fetch one extra to detect next page)
+        var filter = new FilterBuilder<{{ entity.name }}>();
+        filter.Where("type", DocumentType);
+        filter.OrderBy("{{ entity.id_property_name_camel_case }}", descending: false);
 
-        // Get paged data
         var offset = pageIndex * pageSize;
-        var dataQuery = $"SELECT META().id AS {{ entity.id_property_name_camel_case }}, d.* FROM `{BucketName}` AS d WHERE d.type = '{DocumentType}' LIMIT {pageSize} OFFSET {offset}";
-        var dataResult = await cluster.QueryAsync<{{ entity.name }}>(dataQuery);
+        filter.Skip(offset).Take(pageSize + 1);
 
-        var items = new List<{{ entity.name }}>();
-        await foreach (var item in dataResult)
+        var whereClause = filter.Build();
+        var query = $"SELECT META().id AS {{ entity.id_property_name_camel_case }}, e.* FROM `{BucketName}`.`_default`.`_default` e {whereClause}";
+
+        var queryOptions = new QueryOptions();
+        foreach (var param in filter.Parameters)
         {
-            items.Add(item);
+            queryOptions.Parameter(param.Key, param.Value ?? DBNull.Value);
         }
+
+        var results = await scope.QueryToListAsync<{{ entity.name }}>(query, queryOptions);
+
+        // Determine if there are more pages
+        var hasNextPage = results.Count > pageSize;
+        var items = hasNextPage ? results.Take(pageSize).ToList() : results;
 
         return new PagedResult<{{ entity.name }}>
         {
             Data = items,
             PageIndex = pageIndex,
             PageSize = pageSize,
-            TotalCount = (int)totalCount,
-            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+            TotalCount = hasNextPage ? (pageIndex + 2) * pageSize : (pageIndex * pageSize) + items.Count,
+            TotalPages = hasNextPage ? pageIndex + 2 : pageIndex + 1
         };
     }
 

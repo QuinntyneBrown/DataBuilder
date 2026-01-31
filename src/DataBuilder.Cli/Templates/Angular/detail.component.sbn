@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -88,16 +88,30 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
             <div class="card-content">
               @if (!isNew()) {
                 <div class="form-row">
-                  <div class="form-field">
-                    <label class="form-label">{{ entity.id_property_name }}</label>
-                    <div class="readonly-value monospace">{{ '{{' }} itemId {{ '}}' }}</div>
-                  </div>
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>{{ entity.id_property_name }}</mat-label>
+                    <input matInput [value]="itemId" disabled class="monospace">
+                  </mat-form-field>
                 </div>
               }
 
               <div class="form-row">
 {{~ for property in entity.non_id_properties ~}}
 {{~ if property.type_script_type == "boolean" ~}}
+{{~ else if property.is_object ~}}
+                <mat-form-field appearance="outline" class="form-field form-field--full">
+                  <mat-label>{{ property.name }} (JSON)</mat-label>
+                  <textarea matInput formControlName="{{ property.name_camel_case }}" rows="6" class="json-input"></textarea>
+                  <mat-hint>Enter valid JSON (e.g., {{ '{{' }} '{' {{ '}}' }} "key": "value" {{ '{{' }} '}' {{ '}}' }})</mat-hint>
+{{~ if property.is_required ~}}
+                  @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
+                    <mat-error>{{ property.name }} is required</mat-error>
+                  }
+{{~ end ~}}
+                  @if (form.get('{{ property.name_camel_case }}')?.hasError('invalidJson')) {
+                    <mat-error>Invalid JSON format</mat-error>
+                  }
+                </mat-form-field>
 {{~ else ~}}
                 <mat-form-field appearance="outline" class="form-field">
                   <mat-label>{{ property.name }}</mat-label>
@@ -254,26 +268,23 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
       width: 100%;
     }
 
-    .form-label {
-      font-size: 12px;
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.6);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: block;
+    .form-field--full {
+      grid-column: 1 / -1;
     }
 
-    .readonly-value {
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.6);
-      padding: 16px;
-      background-color: rgba(255, 255, 255, 0.05);
-      border-radius: 4px;
+    .json-input {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 13px;
     }
 
     .monospace {
       font-family: 'Roboto Mono', monospace;
+    }
+
+    /* Disabled mat-form-field styling */
+    mat-form-field.form-field input.monospace:disabled {
+      font-family: 'Roboto Mono', monospace;
+      color: rgba(255, 255, 255, 0.6);
     }
 
     /* Toggle Field */
@@ -345,21 +356,31 @@ export class {{ entity.name }}DetailComponent implements OnInit {
 
   form: FormGroup = this.fb.group({
 {{~ for property in entity.non_id_properties ~}}
+{{~ if property.type_script_type == "boolean" ~}}
+    {{ property.name_camel_case }}: [false],
+{{~ else if property.is_object ~}}
 {{~ if property.is_required ~}}
-{{~ if property.type_script_type == "boolean" ~}}
-    {{ property.name_camel_case }}: [false],
+    {{ property.name_camel_case }}: ['{}', [Validators.required, this.jsonValidator]],
 {{~ else ~}}
-    {{ property.name_camel_case }}: ['', Validators.required],
+    {{ property.name_camel_case }}: ['{}', [this.jsonValidator]],
 {{~ end ~}}
-{{~ else ~}}
-{{~ if property.type_script_type == "boolean" ~}}
-    {{ property.name_camel_case }}: [false],
+{{~ else if property.is_required ~}}
+    {{ property.name_camel_case }}: ['', Validators.required],
 {{~ else ~}}
     {{ property.name_camel_case }}: [''],
 {{~ end ~}}
 {{~ end ~}}
-{{~ end ~}}
   });
+
+  private jsonValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value || control.value.trim() === '') return null;
+    try {
+      JSON.parse(control.value);
+      return null;
+    } catch {
+      return { invalidJson: true };
+    }
+  }
 
   itemId: string | null = null;
 
@@ -378,7 +399,11 @@ export class {{ entity.name }}DetailComponent implements OnInit {
       next: (item) => {
         this.form.patchValue({
 {{~ for property in entity.non_id_properties ~}}
+{{~ if property.is_object ~}}
+          {{ property.name_camel_case }}: JSON.stringify(item.{{ property.name_camel_case }} || {}, null, 2),
+{{~ else ~}}
           {{ property.name_camel_case }}: item.{{ property.name_camel_case }},
+{{~ end ~}}
 {{~ end ~}}
         });
         this.loading.set(false);
@@ -394,7 +419,15 @@ export class {{ entity.name }}DetailComponent implements OnInit {
     if (this.form.invalid) return;
 
     this.saving.set(true);
-    const request = this.form.value;
+    const formValue = this.form.value;
+    const request = {
+      ...formValue,
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.is_object ~}}
+      {{ property.name_camel_case }}: formValue.{{ property.name_camel_case }} ? JSON.parse(formValue.{{ property.name_camel_case }}) : {},
+{{~ end ~}}
+{{~ end ~}}
+    };
 
     const operation = this.isNew()
       ? this.{{ entity.name_camel_case }}Service.create(request)

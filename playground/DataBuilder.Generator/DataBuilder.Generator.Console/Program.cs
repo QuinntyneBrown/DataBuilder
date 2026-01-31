@@ -39,7 +39,7 @@ class Program
         if (Directory.Exists(targetDir))
         {
             System.Console.WriteLine($"Removing existing directory: {targetDir}");
-            Directory.Delete(targetDir, recursive: true);
+            await DeleteDirectoryWithRetryAsync(targetDir);
         }
 
         System.Console.WriteLine();
@@ -134,5 +134,82 @@ class Program
             char.ToUpperInvariant(w[0]) + (w.Length > 1 ? w[1..] : "")));
 
         return result;
+    }
+
+    static async Task DeleteDirectoryWithRetryAsync(string path, int maxRetries = 3, int delayMs = 1000)
+    {
+        Exception? lastException = null;
+
+        for (int i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                // Try using cmd.exe rmdir first (handles some lock scenarios better on Windows)
+                if (OperatingSystem.IsWindows())
+                {
+                    await RunCommandAsync("cmd.exe", $"/c rmdir /s /q \"{path}\"");
+                    if (!Directory.Exists(path))
+                        return;
+                }
+
+                Directory.Delete(path, recursive: true);
+                return;
+            }
+            catch (IOException ex)
+            {
+                lastException = ex;
+                System.Console.WriteLine($"  Directory locked, retrying in {delayMs}ms... (attempt {i + 1}/{maxRetries})");
+                await Task.Delay(delayMs);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                lastException = ex;
+                RemoveReadOnlyAttributes(path);
+                System.Console.WriteLine($"  Access denied, removed read-only flags, retrying... (attempt {i + 1}/{maxRetries})");
+                await Task.Delay(delayMs);
+            }
+        }
+
+        // If we get here and directory still exists, warn but continue
+        if (Directory.Exists(path))
+        {
+            System.Console.ForegroundColor = ConsoleColor.Yellow;
+            System.Console.WriteLine($"  Warning: Could not fully delete {path}. Continuing anyway...");
+            System.Console.ResetColor();
+        }
+    }
+
+    static async Task<int> RunCommandAsync(string fileName, string arguments)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = fileName,
+            Arguments = arguments,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = new Process { StartInfo = startInfo };
+        process.Start();
+        await process.WaitForExitAsync();
+        return process.ExitCode;
+    }
+
+    static void RemoveReadOnlyAttributes(string path)
+    {
+        try
+        {
+            foreach (var file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
+            {
+                var attr = File.GetAttributes(file);
+                if ((attr & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                {
+                    File.SetAttributes(file, attr & ~FileAttributes.ReadOnly);
+                }
+            }
+        }
+        catch { /* Ignore errors during attribute removal */ }
     }
 }

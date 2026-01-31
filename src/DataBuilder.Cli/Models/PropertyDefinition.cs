@@ -46,6 +46,11 @@ public class PropertyDefinition
     public bool IsId { get; set; }
 
     /// <summary>
+    /// Whether this property is an object/dictionary type.
+    /// </summary>
+    public bool IsObject { get; set; }
+
+    /// <summary>
     /// The original JSON sample value (for documentation purposes).
     /// </summary>
     public string? SampleValue { get; set; }

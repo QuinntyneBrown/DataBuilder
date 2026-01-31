@@ -22,6 +22,8 @@ public class {{ entity.name }}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = string.Empty;
 {{~ else if property.is_collection ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
+{{~ else if property.is_object ~}}
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
 {{~ else ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; }
 {{~ end ~}}
