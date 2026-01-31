@@ -153,7 +153,12 @@ public class ModelAddCommandHandler
             var entity = entities[0];
 
             // Apply Couchbase settings to the entity
-            entity.UseTypeDiscriminator = useTypeDiscriminator;
+            // Only override UseTypeDiscriminator if CLI option is true
+            // Otherwise preserve auto-detected value from JSON "type" property
+            if (useTypeDiscriminator)
+            {
+                entity.UseTypeDiscriminator = true;
+            }
             entity.Bucket = bucket;
             entity.Scope = scope;
             if (collection != null)

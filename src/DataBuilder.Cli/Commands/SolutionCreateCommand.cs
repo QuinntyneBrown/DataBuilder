@@ -144,7 +144,12 @@ public class SolutionCreateCommandHandler
             // Apply Couchbase settings to each entity
             foreach (var entity in entities)
             {
-                entity.UseTypeDiscriminator = useTypeDiscriminator;
+                // Only override UseTypeDiscriminator if CLI option is true
+                // Otherwise preserve auto-detected value from JSON "type" property
+                if (useTypeDiscriminator)
+                {
+                    entity.UseTypeDiscriminator = true;
+                }
                 entity.Bucket = bucket;
                 entity.Scope = scope;
                 if (collection != null)

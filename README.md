@@ -187,6 +187,22 @@ db solution-create -n MyApp -j entities.json --use-type-discriminator
 - Collection: `general`
 - Documents include `"type": "product"` or `"type": "category"` field
 
+### Auto-Detection via `type` Property
+
+If your JSON schema includes a `type` property on an entity, DataBuilder automatically enables type discrimination for that entity:
+
+```json
+{
+    "product": {
+        "type": "product",
+        "name": "",
+        "price": 0.0
+    }
+}
+```
+
+The `type` property is removed from the generated entity model (it's handled by the repository layer). This allows per-entity control over storage strategy without using CLI flags.
+
 ### Custom Configuration Examples
 
 ```bash

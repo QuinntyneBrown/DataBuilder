@@ -73,6 +73,18 @@ public class SchemaParser : ISchemaParser
             entity.Properties.Add(property);
         }
 
+        // Check for "type" property - if present, enable type discriminator
+        var typeProperty = entity.Properties.FirstOrDefault(p =>
+            string.Equals(p.Name, "Type", StringComparison.OrdinalIgnoreCase));
+
+        if (typeProperty != null)
+        {
+            entity.UseTypeDiscriminator = true;
+            // Remove the type property as it will be handled by the repository
+            entity.Properties.Remove(typeProperty);
+            _logger.LogInformation("Entity {EntityName} has 'type' property - enabling type discriminator", entity.Name);
+        }
+
         // Detect or add ID property
         EnsureIdProperty(entity);
 
