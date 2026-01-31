@@ -70,12 +70,20 @@ import { MatTooltipModule } from '@angular/material/tooltip';
        CSS VARIABLES (Admin UI Design System)
        ============================================ */
     :host {
+      /* Primary Colors */
       --primary-500: #2196f3;
       --primary-600: #1e88e5;
       --primary-700: #1976d2;
       --accent-500: #ff9800;
       --warn-500: #f44336;
 
+      /* Status Colors */
+      --status-success: #4caf50;
+      --status-warning: #ff9800;
+      --status-error: #f44336;
+      --status-info: #2196f3;
+
+      /* Surface Colors */
       --surface-background: #121212;
       --surface-card: #1e1e1e;
       --surface-elevated: #2d2d2d;
@@ -83,16 +91,29 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       --surface-hover: rgba(255, 255, 255, 0.08);
       --surface-selected: rgba(33, 150, 243, 0.16);
 
+      /* Text Colors */
       --text-primary: rgba(255, 255, 255, 0.87);
       --text-secondary: rgba(255, 255, 255, 0.60);
       --text-disabled: rgba(255, 255, 255, 0.38);
 
+      /* Spacing */
       --spacing-xs: 4px;
       --spacing-sm: 8px;
       --spacing-md: 16px;
       --spacing-lg: 24px;
       --spacing-xl: 32px;
 
+      /* Border Radius */
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-chip: 16px;
+
+      /* Transitions */
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-standard: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Elevation */
       --elevation-4: 0 10px 20px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.10);
 
       display: block;
@@ -161,7 +182,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     .main-sidenav ::ng-deep .mat-mdc-list-item {
       color: var(--text-primary);
       margin: 0 var(--spacing-sm);
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
     }
 
     .main-sidenav ::ng-deep .mat-mdc-list-item:hover {

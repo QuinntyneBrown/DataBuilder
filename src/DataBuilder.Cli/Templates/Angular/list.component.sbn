@@ -139,7 +139,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
   `,
   styles: [`
     .page-container {
-      padding: 32px;
+      padding: var(--spacing-xl);
       max-width: 1400px;
       margin: 0 auto;
     }
@@ -149,7 +149,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 32px;
+      margin-bottom: var(--spacing-xl);
     }
 
     .page-header__info {
@@ -159,29 +159,29 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
     .page-title {
       font-size: 28px;
       font-weight: 400;
-      margin: 0 0 4px 0;
-      color: rgba(255, 255, 255, 0.87);
+      margin: 0 0 var(--spacing-xs) 0;
+      color: var(--text-primary);
     }
 
     .page-subtitle {
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--text-secondary);
       margin: 0;
     }
 
     .add-button {
-      height: 40px;
-      padding: 0 24px;
+      height: 36px;
+      padding: 0 var(--spacing-lg);
       font-weight: 500;
     }
 
     /* Filter Bar */
     .filter-bar {
       display: flex;
-      gap: 16px;
-      margin-bottom: 24px;
-      padding: 16px;
-      border-radius: 8px;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
     }
 
     .search-field {
@@ -195,7 +195,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
 
     /* Table Card */
     .table-card {
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       overflow: hidden;
     }
 
@@ -204,13 +204,13 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
     }
 
     .table-row:hover {
-      background-color: rgba(255, 255, 255, 0.04);
+      background-color: var(--surface-hover);
     }
 
     .cell-id {
       font-family: 'Roboto Mono', monospace;
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--text-secondary);
     }
 
     .monospace {
@@ -219,13 +219,13 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
 
     .actions-cell {
       display: flex;
-      gap: 4px;
+      gap: var(--spacing-xs);
     }
 
     .no-data-row td {
       text-align: center;
       padding: 48px;
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--text-secondary);
     }
 
     /* Pagination */
@@ -233,13 +233,13 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 16px;
-      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-top: 1px solid var(--surface-divider);
     }
 
     .pagination__info {
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--text-secondary);
     }
 
     /* Loading */
@@ -251,7 +251,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
 
     /* Delete action in menu */
     .delete-action {
-      color: #f44336;
+      color: var(--warn-500);
     }
   `]
 })

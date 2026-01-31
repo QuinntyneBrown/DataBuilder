@@ -15,8 +15,8 @@ public class {{ entity.name }}
     /// Gets or sets the {{ property.name_camel_case }}.
 {{~ end ~}}
     /// </summary>
-{{~ if property.is_id ~}}
     [JsonPropertyName("{{ property.name_camel_case }}")]
+{{~ if property.is_id ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = string.Empty;
 {{~ else if property.c_sharp_type == "string" ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = string.Empty;
