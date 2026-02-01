@@ -1,0 +1,157 @@
+<div class="page-container">
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb">
+    <a routerLink="../" mat-button color="primary" class="breadcrumb-link">{{ entity.display_name_plural }}</a>
+    <mat-icon class="breadcrumb__separator">chevron_right</mat-icon>
+    <span>{{ '{{' }} isNew() ? 'New {{ entity.display_name }}' : '{{ entity.display_name }} Details' {{ '}}' }}</span>
+  </nav>
+
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  } @else {
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header__info">
+        <h1 class="page-title">
+          {{ '{{' }} isNew() ? 'Create {{ entity.display_name }}' : 'Edit {{ entity.display_name }}' {{ '}}' }}
+        </h1>
+        <p class="page-subtitle">
+          {{ '{{' }} isNew() ? 'Create a new {{ entity.display_name | string.downcase }}' : 'Update {{ entity.display_name | string.downcase }} details' {{ '}}' }}
+        </p>
+      </div>
+      <div class="action-buttons">
+        <button mat-stroked-button routerLink="../">
+          <mat-icon>arrow_back</mat-icon>
+          Cancel
+        </button>
+        @if (!isNew()) {
+          <button mat-stroked-button (click)="clone()">
+            <mat-icon>content_copy</mat-icon>
+            Clone
+          </button>
+          <button mat-stroked-button color="warn" (click)="delete()">
+            <mat-icon>delete</mat-icon>
+            Delete
+          </button>
+        }
+        <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid || saving()">
+          @if (saving()) {
+            <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+            <ng-container>
+              <mat-icon>save</mat-icon>
+              {{ '{{' }} isNew() ? 'Create' : 'Save Changes' {{ '}}' }}
+            </ng-container>
+          }
+        </button>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <!-- Basic Information Card -->
+      <mat-card class="form-card">
+        <div class="card-header">
+          <h2 class="card-title">Basic Information</h2>
+          <p class="card-subtitle">Core details for this {{ entity.display_name | string.downcase }}</p>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="card-content">
+          @if (!isNew()) {
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>{{ entity.id_property_name }}</mat-label>
+                <input matInput [value]="itemId" disabled class="monospace">
+              </mat-form-field>
+            </div>
+          }
+
+          <div class="form-row">
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.type_script_type == "boolean" ~}}
+{{~ else if property.is_complex_type ~}}
+            <div class="json-editor-field form-field--full">
+              <label class="json-editor-label">{{ property.name }}{{~ if property.is_required ~}} *{{~ end ~}}</label>
+              <div id="{{ property.name_camel_case }}Editor" class="json-editor-container jse-theme-dark"></div>
+{{~ if property.is_required ~}}
+              @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
+                <span class="json-editor-error">{{ property.name }} is required</span>
+              }
+{{~ end ~}}
+              @if (form.get('{{ property.name_camel_case }}')?.hasError('invalidJson')) {
+                <span class="json-editor-error">Invalid JSON format</span>
+              }
+            </div>
+{{~ else if property.is_date_time ~}}
+            <div class="datetime-picker-group form-field--full">
+              <mat-form-field appearance="outline" class="datetime-date-field">
+                <mat-label>{{ property.name }} (Date)</mat-label>
+                <input matInput [matDatepicker]="{{ property.name_camel_case }}Picker" formControlName="{{ property.name_camel_case }}">
+                <mat-datepicker-toggle matIconSuffix [for]="{{ property.name_camel_case }}Picker"></mat-datepicker-toggle>
+                <mat-datepicker #{{ property.name_camel_case }}Picker></mat-datepicker>
+{{~ if property.is_required ~}}
+                @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
+                  <mat-error>{{ property.name }} is required</mat-error>
+                }
+{{~ end ~}}
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="datetime-time-field">
+                <mat-label>{{ property.name }} (Time)</mat-label>
+                <input matInput [matTimepicker]="{{ property.name_camel_case }}TimePicker" formControlName="{{ property.name_camel_case }}">
+                <mat-timepicker-toggle matIconSuffix [for]="{{ property.name_camel_case }}TimePicker"></mat-timepicker-toggle>
+                <mat-timepicker #{{ property.name_camel_case }}TimePicker interval="15m"></mat-timepicker>
+              </mat-form-field>
+            </div>
+{{~ else ~}}
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>{{ property.name }}</mat-label>
+{{~ if property.type_script_type == "number" ~}}
+              <input matInput type="number" formControlName="{{ property.name_camel_case }}">
+{{~ else ~}}
+              <input matInput formControlName="{{ property.name_camel_case }}">
+{{~ end ~}}
+{{~ if property.is_required ~}}
+              @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
+                <mat-error>{{ property.name }} is required</mat-error>
+              }
+{{~ end ~}}
+            </mat-form-field>
+{{~ end ~}}
+{{~ end ~}}
+          </div>
+        </div>
+      </mat-card>
+
+{{~ has_boolean_properties = false ~}}
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.type_script_type == "boolean" ~}}
+{{~ has_boolean_properties = true ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ if has_boolean_properties ~}}
+      <!-- Settings Card -->
+      <mat-card class="form-card">
+        <div class="card-header">
+          <h2 class="card-title">Settings</h2>
+          <p class="card-subtitle">Configure {{ entity.display_name | string.downcase }} options</p>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="card-content">
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.type_script_type == "boolean" ~}}
+          <div class="toggle-field">
+            <div class="toggle-label">
+              <div class="toggle-label__title">{{ property.name }}</div>
+              <div class="toggle-label__description">Enable or disable {{ property.name | string.downcase }}</div>
+            </div>
+            <mat-checkbox formControlName="{{ property.name_camel_case }}" color="primary"></mat-checkbox>
+          </div>
+{{~ end ~}}
+{{~ end ~}}
+        </div>
+      </mat-card>
+{{~ end ~}}
+    </form>
+  }
+</div>

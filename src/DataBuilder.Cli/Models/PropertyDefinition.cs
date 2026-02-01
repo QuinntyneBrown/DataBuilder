@@ -61,7 +61,60 @@ public class PropertyDefinition
     public bool IsComplexType => IsObject || IsArray;
 
     /// <summary>
+    /// Whether this property is a datetime field that should use date/time pickers.
+    /// Detected based on naming conventions:
+    /// - Properties ending with "At" containing a past tense verb (e.g., "createdAt", "updatedAt")
+    /// - Properties ending with "DateTime" (e.g., "startDateTime", "endDateTime")
+    /// </summary>
+    public bool IsDateTime => IsDateTimeProperty(Name);
+
+    /// <summary>
     /// The original JSON sample value (for documentation purposes).
     /// </summary>
     public string? SampleValue { get; set; }
+
+    /// <summary>
+    /// Determines if a property name indicates a datetime field based on naming conventions.
+    /// </summary>
+    private static bool IsDateTimeProperty(string propertyName)
+    {
+        if (string.IsNullOrEmpty(propertyName))
+            return false;
+
+        // Check for "DateTime" suffix (e.g., "startDateTime", "endDateTime")
+        if (propertyName.EndsWith("DateTime", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Check for "At" suffix with past tense verb patterns
+        if (propertyName.EndsWith("At", StringComparison.OrdinalIgnoreCase))
+        {
+            // Common past tense verb patterns that precede "At"
+            var pastTensePatterns = new[]
+            {
+                "created", "updated", "modified", "deleted", "published",
+                "submitted", "approved", "rejected", "completed", "started",
+                "ended", "expired", "activated", "deactivated", "logged",
+                "registered", "verified", "confirmed", "cancelled", "processed",
+                "sent", "received", "opened", "closed", "archived", "restored",
+                "synced", "synchronized", "indexed", "refreshed", "loaded",
+                "saved", "edited", "viewed", "accessed", "downloaded", "uploaded",
+                "installed", "uninstalled", "deployed", "released", "launched",
+                "scheduled", "triggered", "executed", "finished", "failed",
+                "succeeded", "generated", "imported", "exported", "migrated",
+                "lastModified", "lastUpdated", "lastAccessed", "lastLogin", "lastSeen"
+            };
+
+            var lowerName = propertyName.ToLowerInvariant();
+            foreach (var pattern in pastTensePatterns)
+            {
+                if (lowerName.StartsWith(pattern, StringComparison.OrdinalIgnoreCase) ||
+                    lowerName.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

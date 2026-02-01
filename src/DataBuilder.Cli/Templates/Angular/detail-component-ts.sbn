@@ -11,6 +11,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatTimepickerModule } from '@angular/material/timepicker';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { createJSONEditor, Mode, type JsonEditor } from 'vanilla-jsoneditor';
 import { {{ entity.name }} } from '../../../models/{{ entity.name_kebab_case }}.model';
 import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab_case }}.service';
@@ -31,322 +34,13 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatCheckboxModule,
-    MatDividerModule
+    MatDividerModule,
+    MatDatepickerModule,
+    MatTimepickerModule
   ],
-  template: `
-    <div class="page-container">
-      <!-- Breadcrumb -->
-      <nav class="breadcrumb">
-        <a routerLink="../" mat-button color="primary" class="breadcrumb-link">{{ entity.display_name_plural }}</a>
-        <mat-icon class="breadcrumb__separator">chevron_right</mat-icon>
-        <span>{{ '{{' }} isNew() ? 'New {{ entity.display_name }}' : '{{ entity.display_name }} Details' {{ '}}' }}</span>
-      </nav>
-
-      @if (loading()) {
-        <div class="loading">
-          <mat-spinner diameter="40"></mat-spinner>
-        </div>
-      } @else {
-        <!-- Page Header -->
-        <div class="page-header">
-          <div class="page-header__info">
-            <h1 class="page-title">
-              {{ '{{' }} isNew() ? 'Create {{ entity.display_name }}' : 'Edit {{ entity.display_name }}' {{ '}}' }}
-            </h1>
-            <p class="page-subtitle">
-              {{ '{{' }} isNew() ? 'Create a new {{ entity.display_name | string.downcase }}' : 'Update {{ entity.display_name | string.downcase }} details' {{ '}}' }}
-            </p>
-          </div>
-          <div class="action-buttons">
-            <button mat-stroked-button routerLink="../">
-              <mat-icon>arrow_back</mat-icon>
-              Cancel
-            </button>
-            @if (!isNew()) {
-              <button mat-stroked-button (click)="clone()">
-                <mat-icon>content_copy</mat-icon>
-                Clone
-              </button>
-              <button mat-stroked-button color="warn" (click)="delete()">
-                <mat-icon>delete</mat-icon>
-                Delete
-              </button>
-            }
-            <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid || saving()">
-              @if (saving()) {
-                <mat-spinner diameter="20"></mat-spinner>
-              } @else {
-                <ng-container>
-                  <mat-icon>save</mat-icon>
-                  {{ '{{' }} isNew() ? 'Create' : 'Save Changes' {{ '}}' }}
-                </ng-container>
-              }
-            </button>
-          </div>
-        </div>
-
-        <form [formGroup]="form" (ngSubmit)="save()">
-          <!-- Basic Information Card -->
-          <mat-card class="form-card">
-            <div class="card-header">
-              <h2 class="card-title">Basic Information</h2>
-              <p class="card-subtitle">Core details for this {{ entity.display_name | string.downcase }}</p>
-            </div>
-            <mat-divider></mat-divider>
-            <div class="card-content">
-              @if (!isNew()) {
-                <div class="form-row">
-                  <mat-form-field appearance="outline" class="form-field">
-                    <mat-label>{{ entity.id_property_name }}</mat-label>
-                    <input matInput [value]="itemId" disabled class="monospace">
-                  </mat-form-field>
-                </div>
-              }
-
-              <div class="form-row">
-{{~ for property in entity.non_id_properties ~}}
-{{~ if property.type_script_type == "boolean" ~}}
-{{~ else if property.is_complex_type ~}}
-                <div class="json-editor-field form-field--full">
-                  <label class="json-editor-label">{{ property.name }}{{~ if property.is_required ~}} *{{~ end ~}}</label>
-                  <div id="{{ property.name_camel_case }}Editor" class="json-editor-container jse-theme-dark"></div>
-{{~ if property.is_required ~}}
-                  @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
-                    <span class="json-editor-error">{{ property.name }} is required</span>
-                  }
-{{~ end ~}}
-                  @if (form.get('{{ property.name_camel_case }}')?.hasError('invalidJson')) {
-                    <span class="json-editor-error">Invalid JSON format</span>
-                  }
-                </div>
-{{~ else ~}}
-                <mat-form-field appearance="outline" class="form-field">
-                  <mat-label>{{ property.name }}</mat-label>
-{{~ if property.type_script_type == "number" ~}}
-                  <input matInput type="number" formControlName="{{ property.name_camel_case }}">
-{{~ else ~}}
-                  <input matInput formControlName="{{ property.name_camel_case }}">
-{{~ end ~}}
-{{~ if property.is_required ~}}
-                  @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
-                    <mat-error>{{ property.name }} is required</mat-error>
-                  }
-{{~ end ~}}
-                </mat-form-field>
-{{~ end ~}}
-{{~ end ~}}
-              </div>
-            </div>
-          </mat-card>
-
-{{~ has_boolean_properties = false ~}}
-{{~ for property in entity.non_id_properties ~}}
-{{~ if property.type_script_type == "boolean" ~}}
-{{~ has_boolean_properties = true ~}}
-{{~ end ~}}
-{{~ end ~}}
-{{~ if has_boolean_properties ~}}
-          <!-- Settings Card -->
-          <mat-card class="form-card">
-            <div class="card-header">
-              <h2 class="card-title">Settings</h2>
-              <p class="card-subtitle">Configure {{ entity.display_name | string.downcase }} options</p>
-            </div>
-            <mat-divider></mat-divider>
-            <div class="card-content">
-{{~ for property in entity.non_id_properties ~}}
-{{~ if property.type_script_type == "boolean" ~}}
-              <div class="toggle-field">
-                <div class="toggle-label">
-                  <div class="toggle-label__title">{{ property.name }}</div>
-                  <div class="toggle-label__description">Enable or disable {{ property.name | string.downcase }}</div>
-                </div>
-                <mat-checkbox formControlName="{{ property.name_camel_case }}" color="primary"></mat-checkbox>
-              </div>
-{{~ end ~}}
-{{~ end ~}}
-            </div>
-          </mat-card>
-{{~ end ~}}
-        </form>
-      }
-    </div>
-  `,
-  styles: [`
-    .page-container {
-      padding: 32px;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    .breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-bottom: 24px;
-      font-size: 14px;
-    }
-
-    .breadcrumb-link {
-      min-width: auto;
-      padding: 0 8px;
-    }
-
-    .breadcrumb__separator {
-      font-size: 18px;
-      opacity: 0.7;
-    }
-
-    .page-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 32px;
-    }
-
-    .page-header__info {
-      flex: 1;
-    }
-
-    .page-title {
-      font-size: 28px;
-      font-weight: 400;
-      margin: 0 0 4px 0;
-    }
-
-    .page-subtitle {
-      font-size: 14px;
-      margin: 0;
-      opacity: 0.7;
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 8px;
-    }
-
-    .form-card {
-      margin-bottom: 24px;
-      overflow: hidden;
-    }
-
-    .card-header {
-      padding: 24px;
-    }
-
-    .card-title {
-      font-size: 18px;
-      font-weight: 500;
-      margin: 0 0 4px 0;
-    }
-
-    .card-subtitle {
-      font-size: 12px;
-      margin: 0;
-      opacity: 0.7;
-    }
-
-    .card-content {
-      padding: 24px;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
-    }
-
-    .form-field {
-      width: 100%;
-    }
-
-    .form-field--full {
-      grid-column: 1 / -1;
-    }
-
-    .json-editor-field {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      grid-column: 1 / -1;
-    }
-
-    .json-editor-label {
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.7);
-      font-weight: 500;
-    }
-
-    .json-editor-container {
-      height: 300px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .json-editor-container:focus-within {
-      border-color: #42a5f5;
-      border-width: 2px;
-    }
-
-    .json-editor-error {
-      color: #f44336;
-      font-size: 12px;
-    }
-
-    .monospace {
-      font-family: 'Roboto Mono', monospace;
-    }
-
-    .toggle-field {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-
-    .toggle-field:last-child {
-      margin-bottom: 0;
-    }
-
-    .toggle-label {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .toggle-label__title {
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-
-    .toggle-label__description {
-      font-size: 12px;
-      opacity: 0.7;
-    }
-
-    .loading {
-      display: flex;
-      justify-content: center;
-      padding: 64px;
-    }
-
-    @media (max-width: 768px) {
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-
-      .page-header {
-        flex-direction: column;
-        gap: 16px;
-      }
-
-      .action-buttons {
-        width: 100%;
-        justify-content: flex-end;
-      }
-    }
-  `]
+  providers: [provideNativeDateAdapter()],
+  templateUrl: './{{ entity.name_kebab_case }}-detail.component.html',
+  styleUrl: './{{ entity.name_kebab_case }}-detail.component.scss'
 })
 export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
@@ -373,6 +67,12 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
 {{~ else ~}}
     {{ property.name_camel_case }}: [{{ if property.is_array }}[]{{ else }}{}{{ end }}],
 {{~ end ~}}
+{{~ else if property.is_date_time ~}}
+{{~ if property.is_required ~}}
+    {{ property.name_camel_case }}: [null as Date | null, Validators.required],
+{{~ else ~}}
+    {{ property.name_camel_case }}: [null as Date | null],
+{{~ end ~}}
 {{~ else if property.is_required ~}}
     {{ property.name_camel_case }}: ['', Validators.required],
 {{~ else ~}}
@@ -394,18 +94,37 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
       const clonedData = history.state?.cloneData;
       if (clonedData) {
         this.loadClonedData(clonedData);
+      } else {
+        // Pre-populate datetime fields with current date/time in create mode
+        this.initializeDateTimeFields();
       }
     }
+  }
+
+  private initializeDateTimeFields(): void {
+    const now = new Date();
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.is_date_time ~}}
+    this.form.get('{{ property.name_camel_case }}')?.setValue(now);
+{{~ end ~}}
+{{~ end ~}}
   }
 
   private loadClonedData(data: any): void {
     this.form.patchValue({
 {{~ for property in entity.non_id_properties ~}}
-{{~ if !property.is_complex_type ~}}
+{{~ if !property.is_complex_type && !property.is_date_time ~}}
       {{ property.name_camel_case }}: data.{{ property.name_camel_case }},
 {{~ end ~}}
 {{~ end ~}}
     });
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.is_date_time ~}}
+    if (data.{{ property.name_camel_case }}) {
+      this.form.get('{{ property.name_camel_case }}')?.setValue(new Date(data.{{ property.name_camel_case }}));
+    }
+{{~ end ~}}
+{{~ end ~}}
     // Store complex property values to be loaded after JSON editors are initialized
     this.pendingCloneData = data;
   }
@@ -484,11 +203,18 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
       next: (item) => {
         this.form.patchValue({
 {{~ for property in entity.non_id_properties ~}}
-{{~ if !property.is_complex_type ~}}
+{{~ if !property.is_complex_type && !property.is_date_time ~}}
           {{ property.name_camel_case }}: item.{{ property.name_camel_case }},
 {{~ end ~}}
 {{~ end ~}}
         });
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.is_date_time ~}}
+        if (item.{{ property.name_camel_case }}) {
+          this.form.get('{{ property.name_camel_case }}')?.setValue(new Date(item.{{ property.name_camel_case }}));
+        }
+{{~ end ~}}
+{{~ end ~}}
         this.loading.set(false);
         // Initialize and update JSON editors after loading completes (need setTimeout for DOM to update)
         setTimeout(() => {

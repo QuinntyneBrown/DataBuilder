@@ -28,7 +28,9 @@ public class AngularGenerator : IAngularGenerator
         var assembly = Assembly.GetExecutingAssembly();
         var templateNames = new[]
         {
-            "model-ts", "service-ts", "list.component", "detail.component",
+            "model-ts", "service-ts",
+            "list-component-ts", "list-component-html", "list-component-scss",
+            "detail-component-ts", "detail-component-html", "detail-component-scss",
             "styles.scss", "index.html", "app.routes", "app.component", "app.config",
             "main-layout.component"
         };
@@ -484,12 +486,20 @@ bootstrapApplication(App, appConfig)
             Directory.CreateDirectory(listDir);
             Directory.CreateDirectory(detailDir);
 
-            // List component
-            await GenerateFileAsync("list.component", Path.Combine(listDir, $"{entity.NameKebabCase}-list.component.ts"),
+            // List component (TypeScript, HTML, SCSS)
+            await GenerateFileAsync("list-component-ts", Path.Combine(listDir, $"{entity.NameKebabCase}-list.component.ts"),
+                entityModel, cancellationToken);
+            await GenerateFileAsync("list-component-html", Path.Combine(listDir, $"{entity.NameKebabCase}-list.component.html"),
+                entityModel, cancellationToken);
+            await GenerateFileAsync("list-component-scss", Path.Combine(listDir, $"{entity.NameKebabCase}-list.component.scss"),
                 entityModel, cancellationToken);
 
-            // Detail component
-            await GenerateFileAsync("detail.component", Path.Combine(detailDir, $"{entity.NameKebabCase}-detail.component.ts"),
+            // Detail component (TypeScript, HTML, SCSS)
+            await GenerateFileAsync("detail-component-ts", Path.Combine(detailDir, $"{entity.NameKebabCase}-detail.component.ts"),
+                entityModel, cancellationToken);
+            await GenerateFileAsync("detail-component-html", Path.Combine(detailDir, $"{entity.NameKebabCase}-detail.component.html"),
+                entityModel, cancellationToken);
+            await GenerateFileAsync("detail-component-scss", Path.Combine(detailDir, $"{entity.NameKebabCase}-detail.component.scss"),
                 entityModel, cancellationToken);
         }
     }
@@ -551,18 +561,20 @@ bootstrapApplication(App, appConfig)
     public async Task<ComponentContent> GenerateListComponentAsync(EntityDefinition entity, CancellationToken cancellationToken = default)
     {
         var model = new { Entity = entity };
-        var ts = await RenderTemplateAsync("list.component", model, cancellationToken);
-        // Components use inline templates/styles, so HTML and CSS are empty strings
-        return new ComponentContent(ts, string.Empty, string.Empty);
+        var ts = await RenderTemplateAsync("list-component-ts", model, cancellationToken);
+        var html = await RenderTemplateAsync("list-component-html", model, cancellationToken);
+        var scss = await RenderTemplateAsync("list-component-scss", model, cancellationToken);
+        return new ComponentContent(ts, html, scss);
     }
 
     /// <inheritdoc />
     public async Task<ComponentContent> GenerateDetailComponentAsync(EntityDefinition entity, CancellationToken cancellationToken = default)
     {
         var model = new { Entity = entity };
-        var ts = await RenderTemplateAsync("detail.component", model, cancellationToken);
-        // Components use inline templates/styles, so HTML and CSS are empty strings
-        return new ComponentContent(ts, string.Empty, string.Empty);
+        var ts = await RenderTemplateAsync("detail-component-ts", model, cancellationToken);
+        var html = await RenderTemplateAsync("detail-component-html", model, cancellationToken);
+        var scss = await RenderTemplateAsync("detail-component-scss", model, cancellationToken);
+        return new ComponentContent(ts, html, scss);
     }
 
     private static string ConvertToSnakeCase(string name)
