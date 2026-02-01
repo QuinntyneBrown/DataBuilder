@@ -63,6 +63,10 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
               Cancel
             </button>
             @if (!isNew()) {
+              <button mat-stroked-button (click)="clone()">
+                <mat-icon>content_copy</mat-icon>
+                Clone
+              </button>
               <button mat-stroked-button color="warn" (click)="delete()">
                 <mat-icon>delete</mat-icon>
                 Delete
@@ -385,8 +389,28 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
       this.itemId = id;
       this.isNew.set(false);
       this.loadItem(id);
+    } else {
+      // Check for cloned data from router state
+      const clonedData = history.state?.cloneData;
+      if (clonedData) {
+        this.loadClonedData(clonedData);
+      }
     }
   }
+
+  private loadClonedData(data: any): void {
+    this.form.patchValue({
+{{~ for property in entity.non_id_properties ~}}
+{{~ if !property.is_complex_type ~}}
+      {{ property.name_camel_case }}: data.{{ property.name_camel_case }},
+{{~ end ~}}
+{{~ end ~}}
+    });
+    // Store complex property values to be loaded after JSON editors are initialized
+    this.pendingCloneData = data;
+  }
+
+  private pendingCloneData: any = null;
 
   ngAfterViewInit(): void {
     // Initialize JSON editors for complex properties (objects and arrays)
@@ -395,6 +419,16 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
     this.initJsonEditor('{{ property.name_camel_case }}', {{ property.is_array }});
 {{~ end ~}}
 {{~ end ~}}
+
+    // Load cloned data for complex properties if present
+    if (this.pendingCloneData) {
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.is_complex_type ~}}
+      this.updateJsonEditor('{{ property.name_camel_case }}', this.pendingCloneData.{{ property.name_camel_case }} || {{ if property.is_array }}[]{{ else }}{}{{ end }});
+{{~ end ~}}
+{{~ end ~}}
+      this.pendingCloneData = null;
+    }
   }
 
   private initJsonEditor(fieldName: string, isArray: boolean = false): void {
@@ -514,5 +548,13 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
         }
       });
     }
+  }
+
+  clone(): void {
+    // Navigate to create page with current form data
+    this.router.navigate(['../new'], {
+      relativeTo: this.route,
+      state: { cloneData: this.form.value }
+    });
   }
 }
