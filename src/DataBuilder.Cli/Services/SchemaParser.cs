@@ -149,6 +149,7 @@ public class SchemaParser : ISchemaParser
         var isNullable = element.ValueKind == JsonValueKind.Null;
         var isCollection = csharpType.StartsWith("List<") || csharpType.EndsWith("[]");
         var isObject = element.ValueKind == JsonValueKind.Object;
+        var isArray = element.ValueKind == JsonValueKind.Array;
 
         string? sampleValue = element.ValueKind switch
         {
@@ -169,6 +170,7 @@ public class SchemaParser : ISchemaParser
             IsNullable = isNullable,
             IsCollection = isCollection,
             IsObject = isObject,
+            IsArray = isArray,
             SampleValue = sampleValue
         };
     }

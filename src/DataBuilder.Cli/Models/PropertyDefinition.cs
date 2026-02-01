@@ -51,6 +51,16 @@ public class PropertyDefinition
     public bool IsObject { get; set; }
 
     /// <summary>
+    /// Whether this property is an array type.
+    /// </summary>
+    public bool IsArray { get; set; }
+
+    /// <summary>
+    /// Whether this property is a complex type (object or array) that requires a JSON editor.
+    /// </summary>
+    public bool IsComplexType => IsObject || IsArray;
+
+    /// <summary>
     /// The original JSON sample value (for documentation purposes).
     /// </summary>
     public string? SampleValue { get; set; }

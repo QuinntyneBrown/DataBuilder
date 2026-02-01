@@ -102,7 +102,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
               <div class="form-row">
 {{~ for property in entity.non_id_properties ~}}
 {{~ if property.type_script_type == "boolean" ~}}
-{{~ else if property.is_object ~}}
+{{~ else if property.is_complex_type ~}}
                 <div class="json-editor-field form-field--full">
                   <label class="json-editor-label">{{ property.name }}{{~ if property.is_required ~}} *{{~ end ~}}</label>
                   <div id="{{ property.name_camel_case }}Editor" class="json-editor-container"></div>
@@ -363,11 +363,11 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
 {{~ for property in entity.non_id_properties ~}}
 {{~ if property.type_script_type == "boolean" ~}}
     {{ property.name_camel_case }}: [false],
-{{~ else if property.is_object ~}}
+{{~ else if property.is_complex_type ~}}
 {{~ if property.is_required ~}}
-    {{ property.name_camel_case }}: [{}, Validators.required],
+    {{ property.name_camel_case }}: [{{ if property.is_array }}[]{{ else }}{}{{ end }}, Validators.required],
 {{~ else ~}}
-    {{ property.name_camel_case }}: [{}],
+    {{ property.name_camel_case }}: [{{ if property.is_array }}[]{{ else }}{}{{ end }}],
 {{~ end ~}}
 {{~ else if property.is_required ~}}
     {{ property.name_camel_case }}: ['', Validators.required],
@@ -389,21 +389,22 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
   }
 
   ngAfterViewInit(): void {
-    // Initialize JSON editors for object properties
+    // Initialize JSON editors for complex properties (objects and arrays)
 {{~ for property in entity.non_id_properties ~}}
-{{~ if property.is_object ~}}
-    this.initJsonEditor('{{ property.name_camel_case }}');
+{{~ if property.is_complex_type ~}}
+    this.initJsonEditor('{{ property.name_camel_case }}', {{ property.is_array }});
 {{~ end ~}}
 {{~ end ~}}
   }
 
-  private initJsonEditor(fieldName: string): void {
+  private initJsonEditor(fieldName: string, isArray: boolean = false): void {
     const container = this.elementRef.nativeElement.querySelector(`#${fieldName}Editor`);
     if (!container) {
       console.warn(`JSON editor container not found for field: ${fieldName}`);
       return;
     }
 
+    const defaultValue = isArray ? [] : {};
     const editor = createJSONEditor({
       target: container,
       props: {
@@ -411,12 +412,12 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
         mainMenuBar: true,
         navigationBar: false,
         statusBar: true,
-        content: { json: this.form.get(fieldName)?.value || {} },
+        content: { json: this.form.get(fieldName)?.value || defaultValue },
         onChange: (updatedContent: any) => {
           try {
             const value = updatedContent.json !== undefined
               ? updatedContent.json
-              : JSON.parse(updatedContent.text ?? '{}');
+              : JSON.parse(updatedContent.text ?? (isArray ? '[]' : '{}'));
             this.form.get(fieldName)?.setValue(value);
             this.form.get(fieldName)?.setErrors(null);
           } catch {
@@ -440,15 +441,15 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
       next: (item) => {
         this.form.patchValue({
 {{~ for property in entity.non_id_properties ~}}
-{{~ if !property.is_object ~}}
+{{~ if !property.is_complex_type ~}}
           {{ property.name_camel_case }}: item.{{ property.name_camel_case }},
 {{~ end ~}}
 {{~ end ~}}
         });
         // Update JSON editors with loaded data
 {{~ for property in entity.non_id_properties ~}}
-{{~ if property.is_object ~}}
-        this.updateJsonEditor('{{ property.name_camel_case }}', item.{{ property.name_camel_case }} || {});
+{{~ if property.is_complex_type ~}}
+        this.updateJsonEditor('{{ property.name_camel_case }}', item.{{ property.name_camel_case }} || {{ if property.is_array }}[]{{ else }}{}{{ end }});
 {{~ end ~}}
 {{~ end ~}}
         this.loading.set(false);
