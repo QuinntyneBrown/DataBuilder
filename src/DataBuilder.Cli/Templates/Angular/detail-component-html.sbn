@@ -73,7 +73,13 @@
 {{~ else if property.is_complex_type ~}}
             <div class="json-editor-field form-field--full">
               <label class="json-editor-label">{{ property.name }}{{~ if property.is_required ~}} *{{~ end ~}}</label>
-              <div id="{{ property.name_camel_case }}Editor" class="json-editor-container jse-theme-dark"></div>
+              <ngx-monaco-editor
+                class="monaco-editor-container"
+                [options]="monacoOptions"
+                [(ngModel)]="{{ property.name_camel_case }}JsonString"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="onJsonEditorChange('{{ property.name_camel_case }}', $event)">
+              </ngx-monaco-editor>
 {{~ if property.is_required ~}}
               @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
                 <span class="json-editor-error">{{ property.name }} is required</span>

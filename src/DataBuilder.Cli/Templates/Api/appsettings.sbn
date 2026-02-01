@@ -8,7 +8,7 @@
   "AllowedHosts": "*",
   "Couchbase": {
     "ConnectionString": "couchbase://localhost",
-    "Username": "Administrator",
+    "Username": "Developer",
     "Password": "password",
     "Buckets": ["{{ bucket_name }}"]
   }

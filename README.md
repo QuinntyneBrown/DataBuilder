@@ -278,7 +278,7 @@ DataBuilder/
 | Templating | Scriban |
 | String Utilities | Humanizer |
 | Generated Backend | .NET 9.0, Couchbase, System.Text.Json |
-| Generated Frontend | Angular 19, Angular Material, RxJS, vanilla-jsoneditor |
+| Generated Frontend | Angular 19, Angular Material, RxJS, Monaco Editor |
 | CI/CD | GitHub Actions |
 
 ## Development
