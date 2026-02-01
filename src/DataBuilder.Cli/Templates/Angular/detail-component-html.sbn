@@ -77,6 +77,7 @@
                 class="monaco-editor-container"
                 [options]="monacoOptions"
                 [(ngModel)]="{{ property.name_camel_case }}JsonString"
+                [ngModelOptions]="{standalone: true}"
                 (ngModelChange)="onJsonEditorChange('{{ property.name_camel_case }}', $event)">
               </ngx-monaco-editor>
 {{~ if property.is_required ~}}

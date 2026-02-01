@@ -12,6 +12,8 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(),
     provideAnimationsAsync(),
-    provideMonacoEditor()
+    provideMonacoEditor({
+      baseUrl: 'assets/monaco/min/vs'
+    })
   ]
 };

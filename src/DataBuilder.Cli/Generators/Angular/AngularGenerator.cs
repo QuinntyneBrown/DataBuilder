@@ -101,6 +101,45 @@ public class AngularGenerator : IAngularGenerator
             await EnsureZoneJsImportAsync(options, cancellationToken);
             // Ensure ngx-monaco-editor-v2 is in package.json for JSON editing
             await EnsureMonacoEditorPackageAsync(options, cancellationToken);
+            // Configure Monaco editor assets in angular.json
+            await ConfigureMonacoAssetsAsync(options, cancellationToken);
+        }
+    }
+
+    private async Task ConfigureMonacoAssetsAsync(SolutionOptions options, CancellationToken cancellationToken)
+    {
+        var angularJsonPath = Path.Combine(options.UiProjectDirectory, "angular.json");
+        if (!File.Exists(angularJsonPath))
+            return;
+
+        var content = await File.ReadAllTextAsync(angularJsonPath, cancellationToken);
+
+        // Check if Monaco assets are already configured
+        if (content.Contains("monaco-editor/min"))
+            return;
+
+        _logger.LogInformation("Configuring Monaco editor assets in angular.json...");
+
+        // Find the assets array and add Monaco configuration
+        var assetsPattern = "\"assets\": [";
+        var assetsIndex = content.IndexOf(assetsPattern);
+        if (assetsIndex > 0)
+        {
+            var insertPosition = assetsIndex + assetsPattern.Length;
+            var monacoAssets = @"
+              {
+                ""glob"": ""**/*"",
+                ""input"": ""node_modules/monaco-editor/min"",
+                ""output"": ""assets/monaco/min""
+              },
+              {
+                ""glob"": ""**/*"",
+                ""input"": ""node_modules/monaco-editor/min-maps"",
+                ""output"": ""assets/monaco/min-maps""
+              },";
+            content = content.Insert(insertPosition, monacoAssets);
+            await File.WriteAllTextAsync(angularJsonPath, content, cancellationToken);
+            _logger.LogDebug("Added Monaco editor assets to angular.json");
         }
     }
 
@@ -218,7 +257,7 @@ public class AngularGenerator : IAngularGenerator
             if (lineStart > 0)
             {
                 // Insert ngx-monaco-editor-v2 and monaco-editor before zone.js
-                var insertText = "\"monaco-editor\": \"^0.52.0\",\n    \"ngx-monaco-editor-v2\": \"^19.0.0\",\n    ";
+                var insertText = "\"monaco-editor\": \"^0.52.0\",\n    \"ngx-monaco-editor-v2\": \"^20.3.0\",\n    ";
                 content = content.Insert(lineStart + 1 + 4, insertText); // +1 for newline, +4 for indentation
 
                 await File.WriteAllTextAsync(packageJsonPath, content, cancellationToken);
@@ -265,7 +304,7 @@ public class AngularGenerator : IAngularGenerator
     ""rxjs"": ""~7.8.0"",
     ""tslib"": ""^2.3.0"",
     ""monaco-editor"": ""^0.52.0"",
-    ""ngx-monaco-editor-v2"": ""^19.0.0"",
+    ""ngx-monaco-editor-v2"": ""^20.3.0"",
     ""zone.js"": ""~0.15.0""
   }},
   ""devDependencies"": {{
@@ -375,15 +414,59 @@ bootstrapApplication(App, appConfig)
     {
         _logger.LogInformation("Adding Angular Material...");
 
-        var result = await _processRunner.RunAsync(
-            "ng",
-            "add @angular/material --skip-confirmation --theme=custom --typography=true --animations=enabled",
+        // Add Angular Material manually to package.json (ng add runs npm install without --legacy-peer-deps)
+        await AddAngularMaterialManuallyAsync(options, cancellationToken);
+
+        // Run npm install with --legacy-peer-deps to handle ngx-monaco-editor-v2 peer dependency conflict
+        _logger.LogInformation("Running npm install with --legacy-peer-deps...");
+        var npmResult = await _processRunner.RunAsync(
+            "npm",
+            "install --legacy-peer-deps",
             options.UiProjectDirectory,
             cancellationToken);
 
-        if (!result.Success)
+        if (!npmResult.Success)
         {
-            _logger.LogWarning("ng add @angular/material failed (may need npm install first): {Error}", result.StandardError);
+            _logger.LogWarning("npm install failed: {Error}", npmResult.StandardError);
+        }
+    }
+
+    private async Task AddAngularMaterialManuallyAsync(SolutionOptions options, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Adding Angular Material to package.json...");
+
+        var packageJsonPath = Path.Combine(options.UiProjectDirectory, "package.json");
+        if (!File.Exists(packageJsonPath))
+            return;
+
+        var content = await File.ReadAllTextAsync(packageJsonPath, cancellationToken);
+
+        // Check if @angular/material is already present
+        if (content.Contains("@angular/material"))
+            return;
+
+        // Find @angular/forms and add @angular/material and @angular/cdk after it
+        var formsPattern = "\"@angular/forms\"";
+        var formsIndex = content.IndexOf(formsPattern);
+        if (formsIndex > 0)
+        {
+            // Extract the version pattern from @angular/forms
+            var versionStart = content.IndexOf(':', formsIndex) + 1;
+            var versionEnd = content.IndexOf(',', versionStart);
+            if (versionEnd < 0) versionEnd = content.IndexOf('}', versionStart);
+            var version = content.Substring(versionStart, versionEnd - versionStart).Trim().Trim('"');
+
+            // Find the end of the @angular/forms line
+            var lineEnd = content.IndexOf('\n', formsIndex);
+            if (lineEnd > 0)
+            {
+                // Insert @angular/material and @angular/cdk after @angular/forms
+                var insertText = $"\n    \"@angular/material\": \"{version}\",\n    \"@angular/cdk\": \"{version}\",";
+                content = content.Insert(lineEnd, insertText);
+
+                await File.WriteAllTextAsync(packageJsonPath, content, cancellationToken);
+                _logger.LogInformation("Added @angular/material and @angular/cdk to package.json");
+            }
         }
     }
 
