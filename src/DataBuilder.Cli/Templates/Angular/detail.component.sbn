@@ -109,7 +109,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
 {{~ else if property.is_complex_type ~}}
                 <div class="json-editor-field form-field--full">
                   <label class="json-editor-label">{{ property.name }}{{~ if property.is_required ~}} *{{~ end ~}}</label>
-                  <div id="{{ property.name_camel_case }}Editor" class="json-editor-container"></div>
+                  <div id="{{ property.name_camel_case }}Editor" class="json-editor-container jse-theme-dark"></div>
 {{~ if property.is_required ~}}
                   @if (form.get('{{ property.name_camel_case }}')?.hasError('required')) {
                     <span class="json-editor-error">{{ property.name }} is required</span>
@@ -273,19 +273,19 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
 
     .json-editor-label {
       font-size: 14px;
-      color: rgba(0, 0, 0, 0.6);
+      color: rgba(255, 255, 255, 0.7);
       font-weight: 500;
     }
 
     .json-editor-container {
       height: 300px;
-      border: 1px solid rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 4px;
       overflow: hidden;
     }
 
     .json-editor-container:focus-within {
-      border-color: #3f51b5;
+      border-color: #42a5f5;
       border-width: 2px;
     }
 
@@ -413,25 +413,34 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
   private pendingCloneData: any = null;
 
   ngAfterViewInit(): void {
-    // Initialize JSON editors for complex properties (objects and arrays)
+    // For create mode (not loading), initialize JSON editors after a tick to ensure DOM is ready
+    if (!this.loading()) {
+      setTimeout(() => {
 {{~ for property in entity.non_id_properties ~}}
 {{~ if property.is_complex_type ~}}
-    this.initJsonEditor('{{ property.name_camel_case }}', {{ property.is_array }});
+        this.initJsonEditor('{{ property.name_camel_case }}', {{ property.is_array }});
 {{~ end ~}}
 {{~ end ~}}
 
-    // Load cloned data for complex properties if present
-    if (this.pendingCloneData) {
+        // Load cloned data for complex properties if present
+        if (this.pendingCloneData) {
 {{~ for property in entity.non_id_properties ~}}
 {{~ if property.is_complex_type ~}}
-      this.updateJsonEditor('{{ property.name_camel_case }}', this.pendingCloneData.{{ property.name_camel_case }} || {{ if property.is_array }}[]{{ else }}{}{{ end }});
+          this.updateJsonEditor('{{ property.name_camel_case }}', this.pendingCloneData.{{ property.name_camel_case }} || {{ if property.is_array }}[]{{ else }}{}{{ end }});
 {{~ end ~}}
 {{~ end ~}}
-      this.pendingCloneData = null;
+          this.pendingCloneData = null;
+        }
+      });
     }
   }
 
   private initJsonEditor(fieldName: string, isArray: boolean = false): void {
+    // Skip if already initialized
+    if (this.jsonEditors.has(fieldName)) {
+      return;
+    }
+
     const container = this.elementRef.nativeElement.querySelector(`#${fieldName}Editor`);
     if (!container) {
       console.warn(`JSON editor container not found for field: ${fieldName}`);
@@ -480,13 +489,16 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
 {{~ end ~}}
 {{~ end ~}}
         });
-        // Update JSON editors with loaded data
+        this.loading.set(false);
+        // Initialize and update JSON editors after loading completes (need setTimeout for DOM to update)
+        setTimeout(() => {
 {{~ for property in entity.non_id_properties ~}}
 {{~ if property.is_complex_type ~}}
-        this.updateJsonEditor('{{ property.name_camel_case }}', item.{{ property.name_camel_case }} || {{ if property.is_array }}[]{{ else }}{}{{ end }});
+          this.initJsonEditor('{{ property.name_camel_case }}', {{ property.is_array }});
+          this.updateJsonEditor('{{ property.name_camel_case }}', item.{{ property.name_camel_case }} || {{ if property.is_array }}[]{{ else }}{}{{ end }});
 {{~ end ~}}
 {{~ end ~}}
-        this.loading.set(false);
+        });
       },
       error: () => {
         this.snackBar.open('Failed to load {{ entity.display_name | string.downcase }}', 'Close', { duration: 5000 });

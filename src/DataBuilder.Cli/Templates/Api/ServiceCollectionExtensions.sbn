@@ -2,6 +2,7 @@ using {{ namespace }}.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Couchbase.Extensions.DependencyInjection;
+using Couchbase.Core.IO.Serializers;
 
 namespace {{ namespace }};
 
@@ -17,8 +18,17 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Configure Couchbase
-        services.AddCouchbase(configuration.GetSection("Couchbase"));
+        // Configure Couchbase with System.Text.Json serializer
+        services.AddCouchbase(options =>
+        {
+            var section = configuration.GetSection("Couchbase");
+            options.ConnectionString = section["ConnectionString"];
+            options.UserName = section["Username"];
+            options.Password = section["Password"];
+
+            // Use SDK's built-in System.Text.Json serializer with Newtonsoft compatibility mode
+            options.Serializer = SystemTextJsonSerializer.Create(increasedNewtonsoftCompatibility: true);
+        });
 
         // Register repositories
 {{~ for entity in entities ~}}

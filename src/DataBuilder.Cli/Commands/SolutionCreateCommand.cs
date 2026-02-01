@@ -177,8 +177,8 @@ public class SolutionCreateCommandHandler
             Console.WriteLine();
             Console.WriteLine("Next steps:");
             Console.WriteLine($"  1. cd {options.SolutionDirectory}");
-            Console.WriteLine($"  2. dotnet build {options.ApiProjectName}");
-            Console.WriteLine($"  3. cd {options.UiProjectName} && npm install && ng serve");
+            Console.WriteLine($"  2. dotnet build src/{options.ApiProjectName}");
+            Console.WriteLine($"  3. cd src/{options.UiProjectName} && npm install && ng serve");
             Console.WriteLine();
 
             return 0;

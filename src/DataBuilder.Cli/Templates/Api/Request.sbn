@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace {{ namespace }}.Models;
@@ -18,7 +19,7 @@ public class Create{{ entity.name }}Request
 {{~ else if property.is_collection ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
 {{~ else if property.is_object ~}}
-    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; }
 {{~ else ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; }
 {{~ end ~}}
@@ -40,7 +41,7 @@ public class Update{{ entity.name }}Request
 {{~ else if property.is_collection ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
 {{~ else if property.is_object ~}}
-    public {{ property.c_sharp_type }} {{ property.name }} { get; set; } = new();
+    public {{ property.c_sharp_type }} {{ property.name }} { get; set; }
 {{~ else ~}}
     public {{ property.c_sharp_type }} {{ property.name }} { get; set; }
 {{~ end ~}}

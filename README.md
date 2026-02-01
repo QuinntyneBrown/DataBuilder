@@ -13,10 +13,11 @@ DataBuilder (`db`) is a .NET global tool that generates complete full-stack solu
 ## Features
 
 - **C# N-Tier API Backend**
-  - Couchbase database integration
+  - Couchbase database integration with System.Text.Json serialization
   - Gateway.Core ORM for data access
   - Complete CRUD operations (GetAll, GetPage, GetById, Update, Delete, Create)
   - Service, Repository, and Controller layers
+  - Support for complex nested objects and arrays
 
 - **Angular Frontend**
   - Angular Material components throughout
@@ -24,6 +25,8 @@ DataBuilder (`db`) is a .NET global tool that generates complete full-stack solu
   - Admin interface with list and detail views
   - Responsive sidenav layout with toolbar
   - Pre-configured API integration with HttpClient
+  - JSON editor for complex object and array properties (with dark theme)
+  - Clone button for duplicating entities
 
 - **Schema-Driven Generation**
   - Define data models with JSON
@@ -118,6 +121,28 @@ db model-add --json-file product.json
 ```
 
 This generates a `Product` entity with full CRUD operations on both backend and frontend.
+
+### Complex Property Support
+
+DataBuilder supports nested objects and arrays in your schema. These are rendered as JSON editors in the Angular UI with full dark theme support:
+
+```json
+{
+    "idea": {
+        "title": "",
+        "description": "",
+        "tags": [""],
+        "customMetadata": {
+            "key": "value"
+        }
+    }
+}
+```
+
+- **Arrays** (e.g., `tags`): Rendered as a JSON editor initialized with `[]`
+- **Objects** (e.g., `customMetadata`): Rendered as a JSON editor initialized with `{}`
+
+The JSON editors support validation, syntax highlighting, and a dark theme that matches the Material Design 3 aesthetic.
 
 ### ID Field Handling
 
@@ -252,8 +277,8 @@ DataBuilder/
 | CLI Framework | System.CommandLine |
 | Templating | Scriban |
 | String Utilities | Humanizer |
-| Generated Backend | .NET 9.0, Couchbase, Gateway.Core |
-| Generated Frontend | Angular 19, Angular Material, RxJS |
+| Generated Backend | .NET 9.0, Couchbase, System.Text.Json |
+| Generated Frontend | Angular 19, Angular Material, RxJS, vanilla-jsoneditor |
 | CI/CD | GitHub Actions |
 
 ## Development
@@ -280,6 +305,25 @@ The project uses GitHub Actions for continuous integration and deployment:
 
 - [Admin UI Implementation Guide](docs/ADMIN-UI-IMPLEMENTATION-GUIDE.md) - Material Design 3 dark theme patterns for generated UIs
 - [Contributing Guide](docs/CONTRIBUTING.md) - How to contribute to DataBuilder
+
+## Changelog
+
+### v1.3.0
+- Added JSON editor dark theme support (jse-theme-dark)
+- Improved JSON editor initialization timing for better reliability
+- Switched to System.Text.Json serializer for Couchbase with Newtonsoft compatibility mode
+- Fixed object property initialization for JsonElement types
+- Improved null handling with `DefaultIgnoreCondition.WhenWritingNull`
+
+### v1.2.0
+- Added Clone button to edit UI for duplicating entities
+- Added JSON editor support for array properties in edit UI
+- Fixed case sensitivity for template files
+
+### v1.1.0
+- Auto-detect type discriminator from JSON schema
+- Added comprehensive unit test project with 290 tests
+- GitHub Actions CI/CD pipeline
 
 ## License
 

@@ -13,7 +13,7 @@
     <ToolCommandName>db</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <PackageId>QuinntyneBrown.DataBuilder.Cli</PackageId>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <Authors>Quinntyne Brown</Authors>
     <Description>CLI tool for scaffolding full-stack applications with C# N-Tier API and Angular frontend</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

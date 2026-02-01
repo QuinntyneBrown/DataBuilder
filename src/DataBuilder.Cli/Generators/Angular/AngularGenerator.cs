@@ -99,6 +99,8 @@ public class AngularGenerator : IAngularGenerator
             await EnsureZoneJsImportAsync(options, cancellationToken);
             // Ensure vanilla-jsoneditor is in package.json for JSON editing
             await EnsureJsonEditorPackageAsync(options, cancellationToken);
+            // Ensure vanilla-jsoneditor dark theme CSS is in angular.json styles
+            await EnsureJsonEditorStylesAsync(options, cancellationToken);
         }
     }
 
@@ -226,6 +228,35 @@ public class AngularGenerator : IAngularGenerator
         }
     }
 
+    private async Task EnsureJsonEditorStylesAsync(SolutionOptions options, CancellationToken cancellationToken)
+    {
+        var angularJsonPath = Path.Combine(options.UiProjectDirectory, "angular.json");
+        if (!File.Exists(angularJsonPath))
+            return;
+
+        var content = await File.ReadAllTextAsync(angularJsonPath, cancellationToken);
+
+        // Check if vanilla-jsoneditor theme is already present
+        if (content.Contains("vanilla-jsoneditor"))
+            return;
+
+        _logger.LogInformation("Adding vanilla-jsoneditor dark theme to angular.json...");
+
+        // Find the styles array and add the dark theme CSS
+        var stylesPattern = "\"src/styles.scss\"";
+        var stylesIndex = content.IndexOf(stylesPattern);
+        if (stylesIndex > 0)
+        {
+            // Insert the dark theme CSS after styles.scss
+            var insertPosition = stylesIndex + stylesPattern.Length;
+            var insertText = ",\n              \"node_modules/vanilla-jsoneditor/themes/jse-theme-dark.css\"";
+            content = content.Insert(insertPosition, insertText);
+
+            await File.WriteAllTextAsync(angularJsonPath, content, cancellationToken);
+            _logger.LogDebug("Added vanilla-jsoneditor dark theme to angular.json");
+        }
+    }
+
     private async Task CreateManualAngularStructureAsync(SolutionOptions options, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Creating Angular project structure manually...");
@@ -296,7 +327,7 @@ public class AngularGenerator : IAngularGenerator
             ""polyfills"": [""zone.js""],
             ""tsConfig"": ""tsconfig.app.json"",
             ""inlineStyleLanguage"": ""scss"",
-            ""styles"": [""src/styles.scss""],
+            ""styles"": [""src/styles.scss"", ""node_modules/vanilla-jsoneditor/themes/jse-theme-dark.css""],
             ""scripts"": []
           }}
         }},
