@@ -1,7 +1,7 @@
-import { Component, OnInit, OnDestroy, inject, signal, CUSTOM_ELEMENTS_SCHEMA, AfterViewInit, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, CUSTOM_ELEMENTS_SCHEMA, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +14,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatTimepickerModule } from '@angular/material/timepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { createJSONEditor, Mode, type JsonEditor } from 'vanilla-jsoneditor';
+import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { {{ entity.name }} } from '../../../models/{{ entity.name_kebab_case }}.model';
 import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab_case }}.service';
 
@@ -25,6 +25,7 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
   imports: [
     CommonModule,
     RouterModule,
+    FormsModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -36,7 +37,8 @@ import { {{ entity.name }}Service } from '../../../services/{{ entity.name_kebab
     MatCheckboxModule,
     MatDividerModule,
     MatDatepickerModule,
-    MatTimepickerModule
+    MatTimepickerModule,
+    MonacoEditorModule
   ],
   providers: [provideNativeDateAdapter()],
   templateUrl: './{{ entity.name_kebab_case }}-detail.component.html',
@@ -48,14 +50,30 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
   private readonly fb = inject(FormBuilder);
   private readonly {{ entity.name_camel_case }}Service = inject({{ entity.name }}Service);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly elementRef = inject(ElementRef);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly isNew = signal(true);
 
-  // JSON Editor instances
-  private jsonEditors: Map<string, JsonEditor> = new Map();
+  // Monaco Editor options
+  readonly monacoOptions = {
+    theme: 'vs-dark',
+    language: 'json',
+    minimap: { enabled: false },
+    automaticLayout: true,
+    formatOnPaste: true,
+    formatOnType: true,
+    scrollBeyondLastLine: false,
+    lineNumbers: 'on' as const,
+    tabSize: 2
+  };
+
+  // JSON string values for Monaco editors
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.is_complex_type ~}}
+  {{ property.name_camel_case }}JsonString: string = '{{ if property.is_array }}[]{{ else }}{}{{ end }}';
+{{~ end ~}}
+{{~ end ~}}
 
   form: FormGroup = this.fb.group({
 {{~ for property in entity.non_id_properties ~}}
@@ -132,15 +150,9 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
   private pendingCloneData: any = null;
 
   ngAfterViewInit(): void {
-    // For create mode (not loading), initialize JSON editors after a tick to ensure DOM is ready
+    // For create mode (not loading), initialize JSON editor values after a tick
     if (!this.loading()) {
       setTimeout(() => {
-{{~ for property in entity.non_id_properties ~}}
-{{~ if property.is_complex_type ~}}
-        this.initJsonEditor('{{ property.name_camel_case }}', {{ property.is_array }});
-{{~ end ~}}
-{{~ end ~}}
-
         // Load cloned data for complex properties if present
         if (this.pendingCloneData) {
 {{~ for property in entity.non_id_properties ~}}
@@ -154,47 +166,18 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
     }
   }
 
-  private initJsonEditor(fieldName: string, isArray: boolean = false): void {
-    // Skip if already initialized
-    if (this.jsonEditors.has(fieldName)) {
-      return;
+  onJsonEditorChange(fieldName: string, value: string): void {
+    try {
+      const parsed = JSON.parse(value);
+      this.form.get(fieldName)?.setValue(parsed);
+      this.form.get(fieldName)?.setErrors(null);
+    } catch {
+      this.form.get(fieldName)?.setErrors({ invalidJson: true });
     }
-
-    const container = this.elementRef.nativeElement.querySelector(`#${fieldName}Editor`);
-    if (!container) {
-      console.warn(`JSON editor container not found for field: ${fieldName}`);
-      return;
-    }
-
-    const defaultValue = isArray ? [] : {};
-    const editor = createJSONEditor({
-      target: container,
-      props: {
-        mode: Mode.text,
-        mainMenuBar: true,
-        navigationBar: false,
-        statusBar: true,
-        content: { json: this.form.get(fieldName)?.value || defaultValue },
-        onChange: (updatedContent: any) => {
-          try {
-            const value = updatedContent.json !== undefined
-              ? updatedContent.json
-              : JSON.parse(updatedContent.text ?? (isArray ? '[]' : '{}'));
-            this.form.get(fieldName)?.setValue(value);
-            this.form.get(fieldName)?.setErrors(null);
-          } catch {
-            this.form.get(fieldName)?.setErrors({ invalidJson: true });
-          }
-        }
-      }
-    });
-    this.jsonEditors.set(fieldName, editor);
   }
 
   ngOnDestroy(): void {
-    // Clean up JSON editors
-    this.jsonEditors.forEach(editor => editor.destroy());
-    this.jsonEditors.clear();
+    // No cleanup needed for Monaco - it handles its own lifecycle
   }
 
   private loadItem(id: string): void {
@@ -216,11 +199,10 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
 {{~ end ~}}
 {{~ end ~}}
         this.loading.set(false);
-        // Initialize and update JSON editors after loading completes (need setTimeout for DOM to update)
+        // Update JSON editor values after loading completes
         setTimeout(() => {
 {{~ for property in entity.non_id_properties ~}}
 {{~ if property.is_complex_type ~}}
-          this.initJsonEditor('{{ property.name_camel_case }}', {{ property.is_array }});
           this.updateJsonEditor('{{ property.name_camel_case }}', item.{{ property.name_camel_case }} || {{ if property.is_array }}[]{{ else }}{}{{ end }});
 {{~ end ~}}
 {{~ end ~}}
@@ -234,11 +216,15 @@ export class {{ entity.name }}DetailComponent implements OnInit, AfterViewInit, 
   }
 
   private updateJsonEditor(fieldName: string, value: any): void {
-    const editor = this.jsonEditors.get(fieldName);
-    if (editor) {
-      editor.set({ json: value });
-      this.form.get(fieldName)?.setValue(value);
+    const jsonString = JSON.stringify(value, null, 2);
+{{~ for property in entity.non_id_properties ~}}
+{{~ if property.is_complex_type ~}}
+    if (fieldName === '{{ property.name_camel_case }}') {
+      this.{{ property.name_camel_case }}JsonString = jsonString;
     }
+{{~ end ~}}
+{{~ end ~}}
+    this.form.get(fieldName)?.setValue(value);
   }
 
   save(): void {

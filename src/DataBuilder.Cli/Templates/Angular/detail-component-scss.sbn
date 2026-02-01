@@ -102,14 +102,14 @@
   font-weight: 500;
 }
 
-.json-editor-container {
+.monaco-editor-container {
   height: 300px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 4px;
   overflow: hidden;
 }
 
-.json-editor-container:focus-within {
+.monaco-editor-container:focus-within {
   border-color: #42a5f5;
   border-width: 2px;
 }

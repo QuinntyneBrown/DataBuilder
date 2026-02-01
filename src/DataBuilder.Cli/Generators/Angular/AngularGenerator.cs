@@ -99,10 +99,8 @@ public class AngularGenerator : IAngularGenerator
             await EnsureZoneJsPackageAsync(options, cancellationToken);
             // Ensure zone.js is imported in main.ts
             await EnsureZoneJsImportAsync(options, cancellationToken);
-            // Ensure vanilla-jsoneditor is in package.json for JSON editing
-            await EnsureJsonEditorPackageAsync(options, cancellationToken);
-            // Ensure vanilla-jsoneditor dark theme CSS is in angular.json styles
-            await EnsureJsonEditorStylesAsync(options, cancellationToken);
+            // Ensure ngx-monaco-editor-v2 is in package.json for JSON editing
+            await EnsureMonacoEditorPackageAsync(options, cancellationToken);
         }
     }
 
@@ -196,7 +194,7 @@ public class AngularGenerator : IAngularGenerator
         _logger.LogDebug("Added zone.js import to main.ts");
     }
 
-    private async Task EnsureJsonEditorPackageAsync(SolutionOptions options, CancellationToken cancellationToken)
+    private async Task EnsureMonacoEditorPackageAsync(SolutionOptions options, CancellationToken cancellationToken)
     {
         var packageJsonPath = Path.Combine(options.UiProjectDirectory, "package.json");
         if (!File.Exists(packageJsonPath))
@@ -204,14 +202,13 @@ public class AngularGenerator : IAngularGenerator
 
         var content = await File.ReadAllTextAsync(packageJsonPath, cancellationToken);
 
-        // Check if vanilla-jsoneditor is already present
-        if (content.Contains("vanilla-jsoneditor"))
+        // Check if ngx-monaco-editor-v2 is already present
+        if (content.Contains("ngx-monaco-editor-v2"))
             return;
 
-        _logger.LogInformation("Adding vanilla-jsoneditor to package.json...");
+        _logger.LogInformation("Adding ngx-monaco-editor-v2 to package.json...");
 
-        // Find the dependencies section and add vanilla-jsoneditor before zone.js (which should be last)
-        // If zone.js exists, insert before it; otherwise insert before devDependencies
+        // Find the dependencies section and add ngx-monaco-editor-v2 before zone.js (which should be last)
         var zoneJsPattern = "\"zone.js\"";
         var zoneJsIndex = content.IndexOf(zoneJsPattern);
         if (zoneJsIndex > 0)
@@ -220,42 +217,13 @@ public class AngularGenerator : IAngularGenerator
             var lineStart = content.LastIndexOf('\n', zoneJsIndex);
             if (lineStart > 0)
             {
-                // Insert vanilla-jsoneditor before zone.js
-                var insertText = "\"vanilla-jsoneditor\": \"^1.0.0\",\n    ";
+                // Insert ngx-monaco-editor-v2 and monaco-editor before zone.js
+                var insertText = "\"monaco-editor\": \"^0.52.0\",\n    \"ngx-monaco-editor-v2\": \"^19.0.0\",\n    ";
                 content = content.Insert(lineStart + 1 + 4, insertText); // +1 for newline, +4 for indentation
 
                 await File.WriteAllTextAsync(packageJsonPath, content, cancellationToken);
-                _logger.LogDebug("Added vanilla-jsoneditor to package.json");
+                _logger.LogDebug("Added ngx-monaco-editor-v2 to package.json");
             }
-        }
-    }
-
-    private async Task EnsureJsonEditorStylesAsync(SolutionOptions options, CancellationToken cancellationToken)
-    {
-        var angularJsonPath = Path.Combine(options.UiProjectDirectory, "angular.json");
-        if (!File.Exists(angularJsonPath))
-            return;
-
-        var content = await File.ReadAllTextAsync(angularJsonPath, cancellationToken);
-
-        // Check if vanilla-jsoneditor theme is already present
-        if (content.Contains("vanilla-jsoneditor"))
-            return;
-
-        _logger.LogInformation("Adding vanilla-jsoneditor dark theme to angular.json...");
-
-        // Find the styles array and add the dark theme CSS
-        var stylesPattern = "\"src/styles.scss\"";
-        var stylesIndex = content.IndexOf(stylesPattern);
-        if (stylesIndex > 0)
-        {
-            // Insert the dark theme CSS after styles.scss
-            var insertPosition = stylesIndex + stylesPattern.Length;
-            var insertText = ",\n              \"node_modules/vanilla-jsoneditor/themes/jse-theme-dark.css\"";
-            content = content.Insert(insertPosition, insertText);
-
-            await File.WriteAllTextAsync(angularJsonPath, content, cancellationToken);
-            _logger.LogDebug("Added vanilla-jsoneditor dark theme to angular.json");
         }
     }
 
@@ -296,7 +264,8 @@ public class AngularGenerator : IAngularGenerator
     ""@angular/router"": ""^19.0.0"",
     ""rxjs"": ""~7.8.0"",
     ""tslib"": ""^2.3.0"",
-    ""vanilla-jsoneditor"": ""^1.0.0"",
+    ""monaco-editor"": ""^0.52.0"",
+    ""ngx-monaco-editor-v2"": ""^19.0.0"",
     ""zone.js"": ""~0.15.0""
   }},
   ""devDependencies"": {{
@@ -329,7 +298,7 @@ public class AngularGenerator : IAngularGenerator
             ""polyfills"": [""zone.js""],
             ""tsConfig"": ""tsconfig.app.json"",
             ""inlineStyleLanguage"": ""scss"",
-            ""styles"": [""src/styles.scss"", ""node_modules/vanilla-jsoneditor/themes/jse-theme-dark.css""],
+            ""styles"": [""src/styles.scss""],
             ""scripts"": []
           }}
         }},
