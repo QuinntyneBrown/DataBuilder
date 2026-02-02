@@ -58,6 +58,12 @@ public class ModelAddService : IModelAddService
         await File.WriteAllTextAsync(entityPath, entityContent, cancellationToken);
         _logger.LogInformation("Generated entity: {Path}", entityPath);
 
+        // Generate Request DTOs (CreateXRequest, UpdateXRequest)
+        var requestsPath = Path.Combine(solutionOptions.CoreProjectDirectory, "Models", $"{entity.Name}Requests.cs");
+        var requestsContent = await _apiGenerator.GenerateRequestsAsync(solutionOptions, entity, cancellationToken);
+        await File.WriteAllTextAsync(requestsPath, requestsContent, cancellationToken);
+        _logger.LogInformation("Generated requests: {Path}", requestsPath);
+
         // Generate Repository
         var repositoryPath = Path.Combine(solutionOptions.InfrastructureProjectDirectory, "Data", $"{entity.Name}Repository.cs");
         Directory.CreateDirectory(Path.GetDirectoryName(repositoryPath)!);
@@ -89,20 +95,24 @@ public class ModelAddService : IModelAddService
         await File.WriteAllTextAsync(servicePath, serviceContent, cancellationToken);
         _logger.LogInformation("Generated Angular service: {Path}", servicePath);
 
-        // Generate list component
+        // Generate list component (TypeScript, HTML, SCSS)
         var listComponentDir = Path.Combine(solutionOptions.UiProjectDirectory, "src", "app", "features", entity.NameKebabCase, $"{entity.NameKebabCase}-list");
         Directory.CreateDirectory(listComponentDir);
-        
+
         var listComponentContent = await _angularGenerator.GenerateListComponentAsync(entity, cancellationToken);
         await File.WriteAllTextAsync(Path.Combine(listComponentDir, $"{entity.NameKebabCase}-list.component.ts"), listComponentContent.Ts, cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(listComponentDir, $"{entity.NameKebabCase}-list.component.html"), listComponentContent.Html, cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(listComponentDir, $"{entity.NameKebabCase}-list.component.scss"), listComponentContent.Css, cancellationToken);
         _logger.LogInformation("Generated list component: {Path}", listComponentDir);
 
-        // Generate detail component
+        // Generate detail component (TypeScript, HTML, SCSS)
         var detailComponentDir = Path.Combine(solutionOptions.UiProjectDirectory, "src", "app", "features", entity.NameKebabCase, $"{entity.NameKebabCase}-detail");
         Directory.CreateDirectory(detailComponentDir);
-        
+
         var detailComponentContent = await _angularGenerator.GenerateDetailComponentAsync(entity, cancellationToken);
         await File.WriteAllTextAsync(Path.Combine(detailComponentDir, $"{entity.NameKebabCase}-detail.component.ts"), detailComponentContent.Ts, cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(detailComponentDir, $"{entity.NameKebabCase}-detail.component.html"), detailComponentContent.Html, cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(detailComponentDir, $"{entity.NameKebabCase}-detail.component.scss"), detailComponentContent.Css, cancellationToken);
         _logger.LogInformation("Generated detail component: {Path}", detailComponentDir);
     }
 

@@ -28,4 +28,9 @@ public interface IApiGenerator
     /// Generates an individual controller file.
     /// </summary>
     Task<string> GenerateControllerAsync(SolutionOptions options, EntityDefinition entity, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generates the request DTOs (Create and Update requests) for an entity.
+    /// </summary>
+    Task<string> GenerateRequestsAsync(SolutionOptions options, EntityDefinition entity, CancellationToken cancellationToken = default);
 }

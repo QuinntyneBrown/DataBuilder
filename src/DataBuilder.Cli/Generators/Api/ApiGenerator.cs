@@ -267,6 +267,18 @@ public class ApiGenerator : IApiGenerator
         return await RenderTemplateAsync("controller", controllerModel, cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<string> GenerateRequestsAsync(SolutionOptions options, EntityDefinition entity, CancellationToken cancellationToken = default)
+    {
+        var requestModel = new
+        {
+            Namespace = options.CoreProjectName,
+            Entity = entity
+        };
+
+        return await RenderTemplateAsync("Request", requestModel, cancellationToken);
+    }
+
     private static string ConvertToSnakeCase(string name)
     {
         if (string.IsNullOrEmpty(name))
